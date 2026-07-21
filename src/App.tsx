@@ -276,15 +276,17 @@ export default function App() {
     
     try {
       const res = await fetch(`/api/riot/account?gameName=${encodeURIComponent(acc.gameName)}&tagLine=${encodeURIComponent(acc.tagLine)}&region=${acc.region || 'americas'}&platform=${acc.platform || 'br1'}`);
-      const data = await res.json();
       
-      if (!res.ok) {
-        return { success: false, error: data.error || `Erro do servidor (${res.status}).` };
+      const contentType = res.headers.get('content-type');
+      if (!res.ok || !contentType || !contentType.includes('application/json')) {
+        return { success: false, error: 'Servidor da Riot API indisponível no momento.' };
       }
+
+      const data = await res.json();
       
       setAccounts(prev => prev.map(a => {
         if (a.id === accountId) {
-          return {
+          const updated = {
             ...a,
             profileIconUrl: data.profileIconUrl || a.profileIconUrl,
             summonerLevel: data.summonerLevel ?? a.summonerLevel,
@@ -294,6 +296,8 @@ export default function App() {
             wins: data.wins,
             losses: data.losses
           };
+          syncAccountToCloud(updated);
+          return updated;
         }
         return a;
       }));
