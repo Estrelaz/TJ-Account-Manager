@@ -21,6 +21,35 @@ const DEFAULT_PERMANENT_TAGS: Tag[] = [
   { id: 'perm-inativo', text: 'Inativo', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20', icon: 'activity' },
 ];
 
+const getAccountOrderKey = (userId?: string | null) => `tj-account-order-${userId || 'guest'}`;
+
+const sortAccountsBySavedOrder = (accList: LoLAccount[], userId?: string | null): LoLAccount[] => {
+  const orderKey = getAccountOrderKey(userId);
+  const savedOrderRaw = localStorage.getItem(orderKey);
+  if (!savedOrderRaw) return accList;
+  try {
+    const orderIds: string[] = JSON.parse(savedOrderRaw);
+    if (!Array.isArray(orderIds) || orderIds.length === 0) return accList;
+
+    const map = new Map<string, LoLAccount>();
+    accList.forEach(acc => map.set(acc.id, acc));
+
+    const sorted: LoLAccount[] = [];
+    orderIds.forEach(id => {
+      const acc = map.get(id);
+      if (acc) {
+        sorted.push(acc);
+        map.delete(id);
+      }
+    });
+
+    const remaining = Array.from(map.values());
+    return [...sorted, ...remaining];
+  } catch (e) {
+    return accList;
+  }
+};
+
 export const FOLDER_COLORS = [
   { id: 'cyan', classes: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', bg: 'bg-cyan-500', border: 'border-cyan-500/50' },
   { id: 'blue', classes: 'bg-blue-500/10 text-blue-400 border-blue-500/20', bg: 'bg-blue-500', border: 'border-blue-500/50' },
@@ -105,7 +134,8 @@ export default function App() {
 
     if (savedAccounts) {
       try {
-        setAccounts(JSON.parse(savedAccounts));
+        const parsed = JSON.parse(savedAccounts);
+        setAccounts(sortAccountsBySavedOrder(parsed, null));
       } catch (e) {
         setAccounts([]);
       }
@@ -143,7 +173,8 @@ export default function App() {
         .order('created_at', { ascending: false });
 
       if (!accErr) {
-        setAccounts(dbAccounts ? dbAccounts.map(dbToAppAccount) : []);
+        const appAccs = dbAccounts ? dbAccounts.map(dbToAppAccount) : [];
+        setAccounts(sortAccountsBySavedOrder(appAccs, userId));
       }
     } catch (err) {
       console.error('Erro ao carregar dados do Supabase:', err);
@@ -220,6 +251,15 @@ export default function App() {
   useEffect(() => {
     if (!authUser) {
       localStorage.setItem('guest-lol-accounts', JSON.stringify(accounts));
+    }
+  }, [accounts, authUser]);
+
+  // Persist account card custom ordering across reloads
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const orderKey = getAccountOrderKey(authUser?.id);
+      const orderIds = accounts.map(a => a.id);
+      localStorage.setItem(orderKey, JSON.stringify(orderIds));
     }
   }, [accounts, authUser]);
 

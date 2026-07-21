@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, UserCircle2, Eye, EyeOff, Copy, Check, FolderInput, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, StickyNote, RefreshCw, AlertCircle, X } from 'lucide-react';
+import { Trash2, UserCircle2, Eye, EyeOff, Copy, Check, FolderInput, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, StickyNote, RefreshCw, AlertCircle, X, GripVertical } from 'lucide-react';
 import { LoLAccount, Tag, Folder } from '../types';
 import { TagEditor } from './TagEditor';
 
@@ -484,16 +484,25 @@ export function AccountCard({
           </div>
         </div>
 
-        {onRefresh && (
-          <button
-            onClick={handleTriggerRefresh}
-            disabled={isRefreshing}
-            className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-gray-400 hover:text-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed group/btn shrink-0"
-            title="Atualizar estatísticas e ranked da Riot API"
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div 
+            className="p-1.5 text-gray-600 hover:text-cyan-400 opacity-60 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing"
+            title="Clique e arraste para reordenar esta conta"
           >
-            <RefreshCw size={16} className={`transition-transform ${isRefreshing ? 'animate-spin text-cyan-400' : 'group-hover/btn:rotate-180'}`} />
-          </button>
-        )}
+            <GripVertical size={18} />
+          </div>
+
+          {onRefresh && (
+            <button
+              onClick={handleTriggerRefresh}
+              disabled={isRefreshing}
+              className="p-2 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-gray-400 hover:text-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed group/btn shrink-0"
+              title="Atualizar estatísticas e ranked da Riot API"
+            >
+              <RefreshCw size={16} className={`transition-transform ${isRefreshing ? 'animate-spin text-cyan-400' : 'group-hover/btn:rotate-180'}`} />
+            </button>
+          )}
+        </div>
       </div>
 
       {isRefreshing && (
