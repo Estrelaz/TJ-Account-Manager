@@ -80,28 +80,31 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Supabase Auth and Data Sync Effect
-  useEffect(() => {
-    if (!supabase) return;
+  // Helper to load guest data from LocalStorage
+  const loadGuestData = () => {
+    const savedAccounts = localStorage.getItem('guest-lol-accounts') || localStorage.getItem('lol-accounts');
+    const savedFolders = localStorage.getItem('guest-lol-folders') || localStorage.getItem('lol-folders');
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const user = session?.user ?? null;
-      setAuthUser(user);
-      if (user) {
-        loadCloudData(user.id);
+    if (savedAccounts) {
+      try {
+        setAccounts(JSON.parse(savedAccounts));
+      } catch (e) {
+        setAccounts([]);
       }
-    });
+    } else {
+      setAccounts([]);
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const user = session?.user ?? null;
-      setAuthUser(user);
-      if (user) {
-        loadCloudData(user.id);
+    if (savedFolders) {
+      try {
+        setFolders(JSON.parse(savedFolders));
+      } catch (e) {
+        setFolders([]);
       }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    } else {
+      setFolders([]);
+    }
+  };
 
   const loadCloudData = async (userId: string) => {
     if (!supabase) return;
@@ -111,8 +114,8 @@ export default function App() {
         .select('*')
         .eq('user_id', userId);
 
-      if (!folderErr && dbFolders && dbFolders.length > 0) {
-        setFolders(dbFolders.map(dbToAppFolder));
+      if (!folderErr) {
+        setFolders(dbFolders ? dbFolders.map(dbToAppFolder) : []);
       }
 
       const { data: dbAccounts, error: accErr } = await supabase
@@ -121,13 +124,43 @@ export default function App() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (!accErr && dbAccounts && dbAccounts.length > 0) {
-        setAccounts(dbAccounts.map(dbToAppAccount));
+      if (!accErr) {
+        setAccounts(dbAccounts ? dbAccounts.map(dbToAppAccount) : []);
       }
     } catch (err) {
       console.error('Erro ao carregar dados do Supabase:', err);
     }
   };
+
+  // Supabase Auth and Data Sync Effect
+  useEffect(() => {
+    if (!supabase) {
+      loadGuestData();
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null;
+      setAuthUser(user);
+      if (user) {
+        loadCloudData(user.id);
+      } else {
+        loadGuestData();
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user ?? null;
+      setAuthUser(user);
+      if (user) {
+        loadCloudData(user.id);
+      } else {
+        loadGuestData();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const syncAccountToCloud = async (account: LoLAccount) => {
     if (!supabase || !authUser) return;
@@ -165,32 +198,18 @@ export default function App() {
     }
   };
 
-  // Load initial data (LocalStorage fallback)
+  // Save LocalStorage ONLY when in Guest mode (authUser is null)
   useEffect(() => {
-    const savedAccounts = localStorage.getItem('lol-accounts');
-    if (savedAccounts) {
-      try {
-        setAccounts(JSON.parse(savedAccounts));
-      } catch (e) {
-        console.error('Error parsing accounts:', e);
-      }
+    if (!authUser) {
+      localStorage.setItem('guest-lol-accounts', JSON.stringify(accounts));
     }
-    const savedFolders = localStorage.getItem('lol-folders');
-    if (savedFolders) {
-      try {
-        setFolders(JSON.parse(savedFolders));
-      } catch (e) {}
-    }
-  }, []);
-
-  // Save on change to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('lol-accounts', JSON.stringify(accounts));
-  }, [accounts]);
+  }, [accounts, authUser]);
 
   useEffect(() => {
-    localStorage.setItem('lol-folders', JSON.stringify(folders));
-  }, [folders]);
+    if (!authUser) {
+      localStorage.setItem('guest-lol-folders', JSON.stringify(folders));
+    }
+  }, [folders, authUser]);
 
   const handleAddFolder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -500,6 +519,7 @@ export default function App() {
                           await signOut();
                           setAuthUser(null);
                           setIsGuestMode(false);
+                          loadGuestData();
                         }}
                         className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       >
@@ -1090,7 +1110,11 @@ export default function App() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onRefreshData={() => {
-          if (authUser) loadCloudData(authUser.id);
+          if (authUser) {
+            loadCloudData(authUser.id);
+          } else {
+            loadGuestData();
+          }
         }}
       />
 
