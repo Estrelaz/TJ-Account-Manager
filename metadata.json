@@ -1,0 +1,8 @@
+{
+  "name": "Remix: LoL Account Manager",
+  "description": "Gerenciador de contas de League of Legends em formato de cards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
