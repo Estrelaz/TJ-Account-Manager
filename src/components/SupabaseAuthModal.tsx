@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { LogIn, LogOut, Database, Copy, Check, X, ExternalLink, ShieldCheck, HelpCircle, Code, AlertTriangle } from 'lucide-react';
-import { supabase, isSupabaseConfigured, signInWithDiscord, signOut, SUPABASE_SQL_SETUP } from '../lib/supabase';
+import { LogIn, LogOut, Database, X, ShieldCheck } from 'lucide-react';
+import { isSupabaseConfigured, signInWithDiscord, signOut } from '../lib/supabase';
 
 interface SupabaseAuthModalProps {
   user: any;
@@ -15,18 +15,10 @@ export const SupabaseAuthModal: React.FC<SupabaseAuthModalProps> = ({
   onClose,
   onRefreshData
 }) => {
-  const [copiedSql, setCopiedSql] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [activeTab, setActiveTab] = useState<'auth' | 'sql' | 'discord_guide'>('auth');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
-
-  const handleCopySQL = () => {
-    navigator.clipboard.writeText(SUPABASE_SQL_SETUP);
-    setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 2500);
-  };
 
   const handleDiscordLogin = async () => {
     setIsLoggingIn(true);
@@ -66,7 +58,7 @@ export const SupabaseAuthModal: React.FC<SupabaseAuthModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-100 flex items-center gap-2">
-                Integração Supabase & Auth Discord
+                TJ Manager - Autenticação Discord
               </h2>
               <p className="text-xs text-gray-400">
                 Sincronize suas contas na nuvem e faça login com Discord
@@ -83,20 +75,6 @@ export const SupabaseAuthModal: React.FC<SupabaseAuthModalProps> = ({
 
         {/* Content */}
         <div className="p-6 overflow-y-auto space-y-5 text-sm text-gray-300">
-          {!isSupabaseConfigured && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 text-xs flex items-start gap-3">
-              <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-amber-300 block mb-1">Chaves do Supabase Pendentes</span>
-                Para habilitar o login real com Discord e banco na nuvem, configure as variáveis no painel de configurações ou ambiente:
-                <div className="mt-2 font-mono text-[11px] bg-black/40 p-2 rounded border border-amber-500/20 text-amber-300">
-                  VITE_SUPABASE_URL="https://sua-url.supabase.co"<br />
-                  VITE_SUPABASE_ANON_KEY="sua-chave-anon"
-                </div>
-              </div>
-            </div>
-          )}
-
           {errorMsg && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300">
               {errorMsg}
@@ -149,7 +127,7 @@ export const SupabaseAuthModal: React.FC<SupabaseAuthModalProps> = ({
 
                 <button
                   onClick={handleDiscordLogin}
-                  disabled={isLoggingIn || !isSupabaseConfigured}
+                  disabled={isLoggingIn}
                   className="px-6 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold rounded-xl shadow-lg shadow-[#5865F2]/20 transition-all flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <LogIn size={18} />
@@ -161,12 +139,12 @@ export const SupabaseAuthModal: React.FC<SupabaseAuthModalProps> = ({
             <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-2">
               <div className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
                 <ShieldCheck size={14} className="text-cyan-400" />
-                Status da Conexão Supabase
+                Status da Conexão TJ Manager
               </div>
               <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
-                <span>Modo do Banco:</span>
-                <span className={isSupabaseConfigured ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
-                  {isSupabaseConfigured ? 'Supabase Cloud (Ativo)' : 'Modo Local (LocalStorage)'}
+                <span>Modo de Armazenamento:</span>
+                <span className={isSupabaseConfigured ? 'text-emerald-400 font-bold' : 'text-cyan-400 font-bold'}>
+                  {isSupabaseConfigured ? 'TJ Manager Cloud' : 'Modo Convidado (Local)'}
                 </span>
               </div>
             </div>

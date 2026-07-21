@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Gamepad2, AlertTriangle, Code, Copy, Check, ExternalLink, HelpCircle, Shield, ArrowRight } from 'lucide-react';
-import { signInWithDiscord, isSupabaseConfigured, SUPABASE_SQL_SETUP } from '../lib/supabase';
+import { Gamepad2, Shield, ArrowRight } from 'lucide-react';
+import { signInWithDiscord, isSupabaseConfigured } from '../lib/supabase';
 
 interface LoginScreenProps {
   onGuestLogin: () => void;
@@ -9,8 +9,6 @@ interface LoginScreenProps {
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onGuestLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSqlModal, setShowSqlModal] = useState(false);
-  const [copiedSql, setCopiedSql] = useState(false);
 
   const handleDiscordLogin = async () => {
     setIsLoading(true);
@@ -19,15 +17,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onGuestLogin }) => {
       await signInWithDiscord();
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Erro ao conectar com o Discord. Verifique a configuração do Supabase.');
+      setError(err.message || 'Erro ao conectar com o Discord. Verifique a configuração.');
       setIsLoading(false);
     }
-  };
-
-  const handleCopySql = () => {
-    navigator.clipboard.writeText(SUPABASE_SQL_SETUP);
-    setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 2500);
   };
 
   return (
@@ -43,7 +35,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onGuestLogin }) => {
             <Gamepad2 size={36} />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white">
-            LoL<span className="text-cyan-400">Manager</span>
+            TJ <span className="text-cyan-400">Manager</span>
           </h1>
           <p className="text-sm text-gray-400 max-w-sm mx-auto leading-relaxed">
             Gerencie suas contas do League of Legends, organize pastas e acompanhe elos com sincronização na nuvem.
@@ -52,18 +44,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onGuestLogin }) => {
 
         {/* Main Card */}
         <div className="bg-[#161C24] border border-white/10 rounded-3xl p-8 shadow-2xl space-y-6 relative backdrop-blur-xl">
-          {!isSupabaseConfigured && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-200 text-xs space-y-2">
-              <div className="flex items-center gap-2 font-bold text-amber-300">
-                <AlertTriangle size={16} />
-                <span>Supabase Não Configurado</span>
-              </div>
-              <p className="text-amber-200/90 leading-relaxed">
-                As variáveis <code className="text-amber-300 bg-black/40 px-1 py-0.5 rounded">VITE_SUPABASE_URL</code> e <code className="text-amber-300 bg-black/40 px-1 py-0.5 rounded">VITE_SUPABASE_ANON_KEY</code> precisam ser definidas no projeto para o Discord Auth funcionar.
-              </p>
-            </div>
-          )}
-
           {error && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300">
               {error}
@@ -73,7 +53,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onGuestLogin }) => {
           <div className="space-y-4">
             <button
               onClick={handleDiscordLogin}
-              disabled={isLoading || !isSupabaseConfigured}
+              disabled={isLoading}
               className="w-full py-4 px-6 bg-[#5865F2] hover:bg-[#4752C4] active:scale-[0.99] text-white font-bold rounded-2xl shadow-lg shadow-[#5865F2]/25 transition-all flex items-center justify-center gap-3 text-base disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <svg className="w-6 h-6 fill-current group-hover:scale-110 transition-transform" viewBox="0 0 127.14 96.36">
@@ -98,70 +78,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onGuestLogin }) => {
             </button>
           </div>
 
-          <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs text-gray-400">
-            <span className="flex items-center gap-1">
-              <Shield size={12} className="text-cyan-400" />
-              Supabase Auth & RLS
+          <div className="pt-4 border-t border-white/5 flex items-center justify-center text-xs text-gray-400">
+            <span className="flex items-center gap-1.5 text-gray-400">
+              <Shield size={13} className="text-cyan-400" />
+              Autenticação & Sincronização Segura
             </span>
-            <button
-              onClick={() => setShowSqlModal(true)}
-              className="text-cyan-400 hover:underline flex items-center gap-1 font-semibold"
-            >
-              <Code size={12} />
-              <span>Ver Script SQL</span>
-            </button>
           </div>
         </div>
 
         {/* Footer info */}
         <p className="text-center text-xs text-gray-500">
-          LoLManager &bull; Sincronização segura de dados de invocadores
+          TJ Manager &bull; Sincronização segura de dados de invocadores
         </p>
       </div>
-
-      {/* Modal do Script SQL */}
-      {showSqlModal && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
-          onClick={() => setShowSqlModal(false)}
-        >
-          <div 
-            className="bg-[#161C24] border border-cyan-500/30 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 relative"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="font-bold text-white flex items-center gap-2 text-base">
-                <Code size={18} className="text-cyan-400" />
-                Script SQL para o Supabase Editor
-              </h3>
-              <button 
-                onClick={() => setShowSqlModal(false)}
-                className="text-gray-400 hover:text-white text-xs px-2 py-1 bg-white/5 rounded-lg"
-              >
-                Fechar
-              </button>
-            </div>
-
-            <p className="text-xs text-gray-300 leading-relaxed">
-              Copie e cole este código no <strong>SQL Editor</strong> do Supabase para criar as tabelas <code className="text-cyan-400">folders</code> e <code className="text-cyan-400">accounts</code> com regras de permissão.
-            </p>
-
-            <pre className="bg-black/70 border border-white/10 rounded-xl p-4 text-[11px] font-mono text-cyan-300 overflow-x-auto max-h-[250px] leading-relaxed">
-              {SUPABASE_SQL_SETUP}
-            </pre>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={handleCopySql}
-                className="px-4 py-2 bg-cyan-500 text-black font-bold rounded-xl text-xs hover:bg-cyan-400 transition-colors flex items-center gap-1.5 shadow-lg shadow-cyan-500/20"
-              >
-                {copiedSql ? <Check size={14} /> : <Copy size={14} />}
-                <span>{copiedSql ? 'Copiado para a área de transferência!' : 'Copiar SQL'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
