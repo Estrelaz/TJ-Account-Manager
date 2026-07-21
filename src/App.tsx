@@ -383,7 +383,7 @@ export default function App() {
             <Gamepad2 size={18} />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-white">
-            LoL<span className="text-cyan-400">Manager</span>
+            TJ <span className="text-cyan-400">Manager</span>
           </h1>
         </div>
         <div className="flex items-center gap-4 hidden sm:flex">
