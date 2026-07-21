@@ -6,6 +6,8 @@ import { AccountCard } from './components/AccountCard';
 import { AddAccountForm } from './components/AddAccountForm';
 import { SupabaseAuthModal } from './components/SupabaseAuthModal';
 import { LoginScreen } from './components/LoginScreen';
+import { ImportModal } from './components/ImportModal';
+import { parseAccountsFromFile } from './utils/importParser';
 import { supabase, isSupabaseConfigured, dbToAppAccount, dbToAppFolder, appToDBAccount, appToDBFolder, getUserProfile, signOut } from './lib/supabase';
 
 export const FOLDER_COLORS = [
@@ -68,6 +70,8 @@ export default function App() {
   const [showRefreshAllConfirm, setShowRefreshAllConfirm] = useState(false);
   const [search, setSearch] = useState('');
   const [pendingImports, setPendingImports] = useState<LoLAccount[]>([]);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<any>(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -326,63 +330,33 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setImportError(null);
+    setShowImportModal(true);
+
     try {
-      const data = await file.arrayBuffer();
-      const workbook = read(data);
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const jsonData = utils.sheet_to_json<any>(worksheet);
-
-      const newAccounts: LoLAccount[] = [];
-
-      for (const row of jsonData) {
-        const findValue = (keys: string[]) => {
-          for (const key of Object.keys(row)) {
-             if (keys.some(k => key.toLowerCase().includes(k))) {
-               return row[key]?.toString();
-             }
-          }
-          return undefined;
-        };
-
-        const nickRaw = findValue(['nick', 'name', 'jogo', 'conta']);
-        const login = findValue(['login', 'user']);
-        const password = findValue(['senha', 'pass', 'pw']);
-
-        if (nickRaw || login) {
-           let gameName = nickRaw || 'Imported Account';
-           let tagLine = 'BR1';
-           
-           if (gameName.includes('#')) {
-             const parts = gameName.split('#');
-             gameName = parts[0];
-             tagLine = parts[1] || 'BR1';
-           }
-
-           newAccounts.push({
-              id: crypto.randomUUID(),
-              gameName: gameName.trim(),
-              tagLine: tagLine.trim(),
-              login: login?.trim(),
-              password: password?.trim(),
-              region: 'americas',
-              platform: 'br1',
-              tags: [],
-              createdAt: Date.now()
-           });
-        }
+      const parsedAccounts = await parseAccountsFromFile(file);
+      if (parsedAccounts.length === 0) {
+        setImportError(`Nenhuma conta foi identificada no arquivo "${file.name}". Verifique se o arquivo contém colunas com Nick/Login/Senha ou linhas no formato 'Nick#TAG:Login:Senha'.`);
+        setPendingImports([]);
+      } else {
+        setPendingImports(parsedAccounts);
       }
-
-      if (newAccounts.length > 0) {
-        setPendingImports(newAccounts);
-      }
-    } catch (err) {
-       console.error("Error importing file", err);
+    } catch (err: any) {
+      console.error("Error importing file", err);
+      setImportError(`Erro ao processar o arquivo "${file.name}": ${err?.message || 'Formato inválido ou não suportado'}`);
+      setPendingImports([]);
     }
     
     if (e.target) {
       e.target.value = '';
     }
+  };
+
+  const handleConfirmImport = (importedList: LoLAccount[]) => {
+    if (importedList.length === 0) return;
+    setAccounts(prev => [...importedList, ...prev]);
+    // Sync newly imported accounts to cloud if logged in
+    importedList.forEach(acc => syncAccountToCloud(acc));
   };
 
   const filteredAccounts = accounts.filter(acc => {
@@ -415,7 +389,7 @@ export default function App() {
         <div className="flex items-center gap-4 hidden sm:flex">
           <input 
             type="file" 
-            accept=".ods,.xlsx,.xls,.csv" 
+            accept=".xlsx,.xls,.csv,.txt,.ods" 
             ref={fileInputRef} 
             onChange={handleImport} 
             className="hidden" 
@@ -1074,6 +1048,20 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Modal de Importação de Contas */}
+      <ImportModal
+        isOpen={showImportModal}
+        importedAccounts={pendingImports}
+        importError={importError}
+        folders={folders}
+        onClose={() => {
+          setShowImportModal(false);
+          setImportError(null);
+          setPendingImports([]);
+        }}
+        onConfirmImport={handleConfirmImport}
+      />
 
       {/* Modal de Autenticação Supabase / Discord */}
       <SupabaseAuthModal
