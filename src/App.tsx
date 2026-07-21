@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Gamepad2, Inbox, Folder as FolderIcon, Plus, ChevronRight, Hash, Trash2, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, Upload, X, RefreshCw, AlertTriangle, Database, LogIn } from 'lucide-react';
+import { Search, Gamepad2, Inbox, Folder as FolderIcon, Plus, ChevronRight, Hash, Trash2, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, Upload, X, RefreshCw, AlertTriangle, Database, LogIn, Download } from 'lucide-react';
 import { read, utils } from 'xlsx';
 import { LoLAccount, Tag, Folder } from './types';
 import { AccountCard } from './components/AccountCard';
@@ -7,6 +7,7 @@ import { AddAccountForm } from './components/AddAccountForm';
 import { SupabaseAuthModal } from './components/SupabaseAuthModal';
 import { LoginScreen } from './components/LoginScreen';
 import { ImportModal } from './components/ImportModal';
+import { ExportModal } from './components/ExportModal';
 import { parseAccountsFromFile } from './utils/importParser';
 import { supabase, isSupabaseConfigured, dbToAppAccount, dbToAppFolder, appToDBAccount, appToDBFolder, getUserProfile, signOut } from './lib/supabase';
 
@@ -71,6 +72,7 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [pendingImports, setPendingImports] = useState<LoLAccount[]>([]);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<any>(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
@@ -400,6 +402,16 @@ export default function App() {
           >
             <Upload size={16} />
             <span>Importar</span>
+          </button>
+
+          <button 
+            onClick={() => setShowExportModal(true)}
+            disabled={accounts.length === 0}
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#161C24] border border-white/10 hover:border-cyan-500/50 hover:text-cyan-400 rounded-lg text-sm text-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Exportar contas cadastradas em arquivo .txt"
+          >
+            <Download size={16} />
+            <span>Exportar</span>
           </button>
 
           <button
@@ -1061,6 +1073,15 @@ export default function App() {
           setPendingImports([]);
         }}
         onConfirmImport={handleConfirmImport}
+      />
+
+      {/* Modal de Exportação de Contas */}
+      <ExportModal
+        isOpen={showExportModal}
+        accounts={accounts}
+        folders={folders}
+        activeFolderId={activeFolderId}
+        onClose={() => setShowExportModal(false)}
       />
 
       {/* Modal de Autenticação Supabase / Discord */}
