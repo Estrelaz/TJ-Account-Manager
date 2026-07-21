@@ -161,6 +161,10 @@ CREATE TABLE IF NOT EXISTS public.folders (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Garantir que as colunas color e icon existam mesmo se a tabela já existia antes
+ALTER TABLE public.folders ADD COLUMN IF NOT EXISTS color TEXT DEFAULT 'cyan';
+ALTER TABLE public.folders ADD COLUMN IF NOT EXISTS icon TEXT DEFAULT 'folder';
+
 -- 3. Tabela de Contas
 CREATE TABLE IF NOT EXISTS public.accounts (
     id TEXT PRIMARY KEY,

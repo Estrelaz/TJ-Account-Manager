@@ -618,7 +618,9 @@ export default function App() {
                         <button onClick={() => setEditingFolderId(null)} className="text-xs text-gray-400 hover:text-white">Cancelar</button>
                         <button 
                           onClick={() => {
-                            setFolders(prev => prev.map(f => f.id === folder.id ? { ...f, name: editFolderName, color: editFolderColor, icon: editFolderIcon } : f));
+                            const updatedFolder: Folder = { ...folder, name: editFolderName, color: editFolderColor, icon: editFolderIcon };
+                            setFolders(prev => prev.map(f => f.id === folder.id ? updatedFolder : f));
+                            syncFolderToCloud(updatedFolder);
                             setEditingFolderId(null);
                           }} 
                           className="text-xs bg-cyan-600 hover:bg-cyan-500 text-white px-2 py-1 rounded"
@@ -940,8 +942,16 @@ export default function App() {
                     <button
                       onClick={() => {
                         // Move accounts to root (folderId: null) and delete folder
-                        setAccounts(prev => prev.map(a => a.folderId === folderToDelete.id ? { ...a, folderId: null } : a));
+                        setAccounts(prev => prev.map(a => {
+                          if (a.folderId === folderToDelete.id) {
+                            const updated = { ...a, folderId: null };
+                            syncAccountToCloud(updated);
+                            return updated;
+                          }
+                          return a;
+                        }));
                         setFolders(prev => prev.filter(f => f.id !== folderToDelete.id));
+                        deleteFolderFromCloud(folderToDelete.id);
                         if (activeFolderId === folderToDelete.id) setActiveFolderId(null);
                         setFolderToDelete(null);
                       }}
@@ -963,8 +973,10 @@ export default function App() {
                     <button
                       onClick={() => {
                         // Delete all accounts in folder and delete folder
+                        accounts.filter(a => a.folderId === folderToDelete.id).forEach(a => deleteAccountFromCloud(a.id));
                         setAccounts(prev => prev.filter(a => a.folderId !== folderToDelete.id));
                         setFolders(prev => prev.filter(f => f.id !== folderToDelete.id));
+                        deleteFolderFromCloud(folderToDelete.id);
                         if (activeFolderId === folderToDelete.id) setActiveFolderId(null);
                         setFolderToDelete(null);
                       }}
