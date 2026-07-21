@@ -6,6 +6,7 @@ import { TagEditor } from './TagEditor';
 interface AccountCardProps {
   account: LoLAccount;
   folders: Folder[];
+  permanentTags?: Tag[];
   onDelete: (id: string) => void;
   onAddTag: (accountId: string, tag: Omit<Tag, 'id'>) => void;
   onRemoveTag: (accountId: string, tagId: string) => void;
@@ -13,6 +14,8 @@ interface AccountCardProps {
   onMoveToFolder: (accountId: string, folderId: string | null) => void;
   onEdit: (accountId: string, updates: Partial<LoLAccount>) => void;
   onRefresh?: (accountId: string) => Promise<{ success: boolean; error?: string }>;
+  onReorderAccounts?: (draggedAccountId: string, targetAccountId: string) => void;
+  onOpenPermanentTagsModal?: () => void;
 }
 
 const IconMapper: Record<string, React.ElementType> = {
@@ -61,11 +64,25 @@ const FOLDER_TEXT_COLORS: Record<string, string> = {
   gray: 'text-gray-400',
 };
 
-export function AccountCard({ account, folders, onDelete, onAddTag, onRemoveTag, onReorderTags, onMoveToFolder, onEdit, onRefresh }: AccountCardProps) {
+export function AccountCard({ 
+  account, 
+  folders, 
+  permanentTags = [], 
+  onDelete, 
+  onAddTag, 
+  onRemoveTag, 
+  onReorderTags, 
+  onMoveToFolder, 
+  onEdit, 
+  onRefresh, 
+  onReorderAccounts, 
+  onOpenPermanentTagsModal 
+}: AccountCardProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [copiedLogin, setCopiedLogin] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [editData, setEditData] = useState({
     gameName: account.gameName,
     tagLine: account.tagLine,
@@ -400,15 +417,34 @@ export function AccountCard({ account, folders, onDelete, onAddTag, onRemoveTag,
       )}
 
       <div 
-      className={`bg-[#161C24] border border-white/5 rounded-2xl p-5 ${hoverBorder} transition-colors shadow-xl flex flex-col gap-4 cursor-grab active:cursor-grabbing relative group`}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('accountId', account.id);
-        e.dataTransfer.setData('type', 'account');
-        e.dataTransfer.effectAllowed = 'move';
-      }}
-      onContextMenu={handleContextMenu}
-    >
+        className={`bg-[#161C24] border ${isDragOver ? 'border-cyan-400 ring-2 ring-cyan-500/50 scale-[1.01]' : 'border-white/5'} rounded-2xl p-5 ${hoverBorder} transition-all shadow-xl flex flex-col gap-4 cursor-grab active:cursor-grabbing relative group`}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData('accountId', account.id);
+          e.dataTransfer.setData('type', 'account');
+          e.dataTransfer.effectAllowed = 'move';
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (e.dataTransfer.types.includes('type') || e.dataTransfer.types.includes('accountid')) {
+            e.dataTransfer.dropEffect = 'move';
+            if (!isDragOver) setIsDragOver(true);
+          }
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          const type = e.dataTransfer.getData('type');
+          if (type === 'account') {
+            const draggedId = e.dataTransfer.getData('accountId');
+            if (draggedId && draggedId !== account.id && onReorderAccounts) {
+              onReorderAccounts(draggedId, account.id);
+            }
+          }
+        }}
+        onContextMenu={handleContextMenu}
+      >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-4">
           <div className="relative shrink-0">
@@ -703,7 +739,12 @@ export function AccountCard({ account, folders, onDelete, onAddTag, onRemoveTag,
             </span>
           )})}
           <div className="relative">
-            <TagEditor onAddTag={(tag) => onAddTag(account.id, tag)} />
+            <TagEditor 
+              accountTags={account.tags}
+              permanentTags={permanentTags}
+              onAddTag={(tag) => onAddTag(account.id, tag)} 
+              onOpenPermanentTagsModal={onOpenPermanentTagsModal}
+            />
           </div>
         </div>
       </div>

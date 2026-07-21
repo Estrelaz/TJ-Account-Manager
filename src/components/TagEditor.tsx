@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, X, Check, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost } from 'lucide-react';
+import { Plus, X, Check, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, Tag as TagIcon, Settings } from 'lucide-react';
 import { Tag } from '../types';
 
 interface TagEditorProps {
+  accountTags?: Tag[];
+  permanentTags?: Tag[];
   onAddTag: (tag: Omit<Tag, 'id'>) => void;
+  onOpenPermanentTagsModal?: () => void;
 }
 
 const PRESET_COLORS = [
@@ -36,7 +39,21 @@ const PRESET_ICONS = [
   { name: 'ghost', icon: Ghost },
 ];
 
-export function TagEditor({ onAddTag }: TagEditorProps) {
+const IconMapper: Record<string, React.ElementType> = {
+  shield: Shield,
+  star: Star,
+  zap: Zap,
+  activity: Activity,
+  award: Award,
+  flame: Flame,
+  target: Target,
+  sparkles: Sparkles,
+  sword: Sword,
+  crown: Crown,
+  ghost: Ghost,
+};
+
+export function TagEditor({ accountTags = [], permanentTags = [], onAddTag, onOpenPermanentTagsModal }: TagEditorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [text, setText] = useState('');
   const [color, setColor] = useState(PRESET_COLORS[0]);
@@ -63,63 +80,130 @@ export function TagEditor({ onAddTag }: TagEditorProps) {
     }
   };
 
+  const handleAddPermanent = (pTag: Tag) => {
+    onAddTag({ text: pTag.text, color: pTag.color, icon: pTag.icon });
+    setIsOpen(false);
+  };
+
   return (
-    <div className="flex flex-col gap-2 p-3 bg-[#161C24] border border-white/10 rounded-lg absolute z-10 w-56 shadow-2xl">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-300">Nova Tag</span>
+    <div className="flex flex-col gap-3 p-3 bg-[#161C24] border border-cyan-500/40 rounded-xl absolute z-30 w-64 shadow-2xl animate-in fade-in duration-150">
+      <div className="flex items-center justify-between border-b border-white/10 pb-2">
+        <span className="text-xs font-bold text-gray-200 flex items-center gap-1.5">
+          <TagIcon size={12} className="text-cyan-400" />
+          Adicionar Tag
+        </span>
         <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-300 transition-colors">
           <X size={14} />
         </button>
       </div>
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
-        placeholder="Nome da tag..."
-        className="bg-black/40 border border-white/10 rounded p-1.5 text-sm text-gray-100 focus:outline-none focus:border-cyan-500/50"
-        autoFocus
-      />
-      
-      <div>
-        <span className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Cor</span>
-        <div className="flex flex-wrap gap-1">
-          {PRESET_COLORS.map(c => (
-            <button
-              key={c}
-              onClick={() => setColor(c)}
-              className={`w-5 h-5 rounded border ${c} ${color === c ? 'ring-1 ring-offset-1 ring-offset-[#161C24] ring-white' : ''}`}
-            />
-          ))}
-        </div>
-      </div>
 
-      <div>
-        <span className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Ícone</span>
-        <div className="flex flex-wrap gap-1">
-          {PRESET_ICONS.map(pi => {
-            const IconComp = pi.icon;
-            return (
+      {/* Quick Select Permanent Tags */}
+      {permanentTags.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-cyan-400 uppercase font-bold tracking-wider">
+              Tags Permanentes
+            </span>
+            {onOpenPermanentTagsModal && (
               <button
-                key={pi.name}
-                onClick={() => setIconName(pi.name)}
-                className={`w-6 h-6 flex items-center justify-center rounded border ${iconName === pi.name ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400' : 'bg-black/40 border-white/10 text-gray-400 hover:text-gray-200'}`}
-                title={pi.name}
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenPermanentTagsModal();
+                }}
+                className="text-[10px] text-gray-400 hover:text-cyan-300 flex items-center gap-0.5"
+                title="Gerenciar Tags"
               >
-                {IconComp ? <IconComp size={12} /> : <span className="text-[10px]">🚫</span>}
+                <Settings size={10} />
+                <span>Gerenciar</span>
               </button>
-            )
-          })}
-        </div>
-      </div>
+            )}
+          </div>
 
-      <button
-        onClick={handleAdd}
-        disabled={!text.trim()}
-        className="mt-2 w-full flex items-center justify-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded py-1.5 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        <Check size={14} /> Adicionar
-      </button>
+          <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+            {permanentTags.map(pt => {
+              const IconComp = pt.icon ? IconMapper[pt.icon] : null;
+              const isAlreadyAdded = accountTags.some(t => t.text.toLowerCase() === pt.text.toLowerCase());
+
+              return (
+                <button
+                  key={pt.id}
+                  onClick={() => handleAddPermanent(pt)}
+                  disabled={isAlreadyAdded}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border transition-all ${pt.color} ${
+                    isAlreadyAdded 
+                      ? 'opacity-40 cursor-not-allowed' 
+                      : 'hover:scale-105 active:scale-95 hover:shadow-md'
+                  }`}
+                  title={isAlreadyAdded ? 'Já adicionada nesta conta' : `Clique para adicionar ${pt.text}`}
+                >
+                  {IconComp && <IconComp size={10} />}
+                  <span>{pt.text}</span>
+                  {isAlreadyAdded && <Check size={10} className="text-emerald-400 shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Custom Tag Input */}
+      <div className="space-y-2 border-t border-white/5 pt-2">
+        <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block">
+          Criar Tag Personalizada
+        </span>
+
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
+          placeholder="Nome da tag..."
+          className="w-full bg-black/40 border border-white/10 rounded-lg p-1.5 text-xs text-gray-100 focus:outline-none focus:border-cyan-500/50"
+        />
+        
+        <div>
+          <span className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Cor</span>
+          <div className="flex flex-wrap gap-1">
+            {PRESET_COLORS.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                className={`w-4 h-4 rounded border ${c} ${color === c ? 'ring-1 ring-offset-1 ring-offset-[#161C24] ring-white' : ''}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <span className="text-[10px] text-gray-500 uppercase font-semibold mb-1 block">Ícone</span>
+          <div className="flex flex-wrap gap-1">
+            {PRESET_ICONS.map(pi => {
+              const IconComp = pi.icon;
+              return (
+                <button
+                  key={pi.name}
+                  type="button"
+                  onClick={() => setIconName(pi.name)}
+                  className={`w-5 h-5 flex items-center justify-center rounded border ${iconName === pi.name ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400' : 'bg-black/40 border-white/10 text-gray-400 hover:text-gray-200'}`}
+                  title={pi.name}
+                >
+                  {IconComp ? <IconComp size={10} /> : <span className="text-[9px]">🚫</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <button
+          onClick={handleAdd}
+          disabled={!text.trim()}
+          className="w-full flex items-center justify-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg py-1.5 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+        >
+          <Check size={14} /> Adicionar Tag
+        </button>
+      </div>
     </div>
   );
 }

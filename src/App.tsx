@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Gamepad2, Inbox, Folder as FolderIcon, Plus, ChevronRight, Hash, Trash2, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, Upload, X, RefreshCw, AlertTriangle, Database, LogIn, Download } from 'lucide-react';
+import { Search, Gamepad2, Inbox, Folder as FolderIcon, Plus, ChevronRight, Hash, Trash2, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, Upload, X, RefreshCw, AlertTriangle, Database, LogIn, Download, Tag as TagIcon } from 'lucide-react';
 import { read, utils } from 'xlsx';
 import { LoLAccount, Tag, Folder } from './types';
 import { AccountCard } from './components/AccountCard';
@@ -8,8 +8,18 @@ import { SupabaseAuthModal } from './components/SupabaseAuthModal';
 import { LoginScreen } from './components/LoginScreen';
 import { ImportModal } from './components/ImportModal';
 import { ExportModal } from './components/ExportModal';
+import { PermanentTagsModal } from './components/PermanentTagsModal';
 import { parseAccountsFromFile } from './utils/importParser';
 import { supabase, isSupabaseConfigured, dbToAppAccount, dbToAppFolder, appToDBAccount, appToDBFolder, getUserProfile, signOut } from './lib/supabase';
+
+const DEFAULT_PERMANENT_TAGS: Tag[] = [
+  { id: 'perm-smurf', text: 'Smurf', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', icon: 'zap' },
+  { id: 'perm-main', text: 'Main', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: 'crown' },
+  { id: 'perm-md10', text: 'MD10', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: 'target' },
+  { id: 'perm-vendido', text: 'Vendido', color: 'bg-gray-500/10 text-gray-400 border-gray-500/20', icon: 'shield' },
+  { id: 'perm-mono', text: 'Mono Hero', color: 'bg-red-500/10 text-red-400 border-red-500/20', icon: 'sword' },
+  { id: 'perm-inativo', text: 'Inativo', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20', icon: 'activity' },
+];
 
 export const FOLDER_COLORS = [
   { id: 'cyan', classes: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', bg: 'bg-cyan-500', border: 'border-cyan-500/50' },
@@ -78,6 +88,14 @@ export default function App() {
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showPermanentTagsModal, setShowPermanentTagsModal] = useState(false);
+  const [permanentTags, setPermanentTags] = useState<Tag[]>(() => {
+    const saved = localStorage.getItem('tj-permanent-tags');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { return DEFAULT_PERMANENT_TAGS; }
+    }
+    return DEFAULT_PERMANENT_TAGS;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper to load guest data from LocalStorage
@@ -292,6 +310,36 @@ export default function App() {
     }));
   };
 
+  useEffect(() => {
+    localStorage.setItem('tj-permanent-tags', JSON.stringify(permanentTags));
+  }, [permanentTags]);
+
+  const handleAddPermanentTag = (tagData: Omit<Tag, 'id'>) => {
+    const newTag: Tag = { ...tagData, id: crypto.randomUUID() };
+    setPermanentTags(prev => [...prev, newTag]);
+  };
+
+  const handleDeletePermanentTag = (tagId: string) => {
+    setPermanentTags(prev => prev.filter(t => t.id !== tagId));
+  };
+
+  const handleReorderAccounts = (draggedAccountId: string, targetAccountId: string) => {
+    if (draggedAccountId === targetAccountId) return;
+    setAccounts(prev => {
+      const fromIndex = prev.findIndex(a => a.id === draggedAccountId);
+      const toIndex = prev.findIndex(a => a.id === targetAccountId);
+      if (fromIndex === -1 || toIndex === -1) return prev;
+
+      const updated = [...prev];
+      const [movedAccount] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, movedAccount);
+
+      // Trigger cloud sync if logged in
+      updated.forEach(acc => syncAccountToCloud(acc));
+      return updated;
+    });
+  };
+
 
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
 
@@ -431,6 +479,15 @@ export default function App() {
           >
             <Download size={16} />
             <span>Exportar</span>
+          </button>
+
+          <button
+            onClick={() => setShowPermanentTagsModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#161C24] border border-white/10 hover:border-cyan-500/50 hover:text-cyan-400 rounded-lg text-sm text-gray-400 transition-colors"
+            title="Gerenciar Tags Permanentes"
+          >
+            <TagIcon size={16} />
+            <span>Tags</span>
           </button>
 
           <button
@@ -769,12 +826,15 @@ export default function App() {
                     key={account.id}
                     account={account}
                     folders={folders}
+                    permanentTags={permanentTags}
                     onDelete={handleDeleteAccount}
                     onAddTag={handleAddTag}
                     onRemoveTag={handleRemoveTag}
                     onReorderTags={handleReorderTags}
                     onMoveToFolder={handleMoveToFolder}
                     onRefresh={handleRefreshAccount}
+                    onReorderAccounts={handleReorderAccounts}
+                    onOpenPermanentTagsModal={() => setShowPermanentTagsModal(true)}
                     onEdit={(id, updates) => {
                       setAccounts(prev => prev.map(a => {
                         if (a.id === id) {
@@ -1116,6 +1176,15 @@ export default function App() {
             loadGuestData();
           }
         }}
+      />
+
+      {/* Modal de Gerenciamento de Tags Permanentes */}
+      <PermanentTagsModal
+        isOpen={showPermanentTagsModal}
+        permanentTags={permanentTags}
+        onClose={() => setShowPermanentTagsModal(false)}
+        onAddPermanentTag={handleAddPermanentTag}
+        onDeletePermanentTag={handleDeletePermanentTag}
       />
 
       {/* Footer Area */}
