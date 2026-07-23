@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
-import { LoLAccount } from '../types';
+import { LoLAccount, Folder } from '../types';
 
 interface AddAccountFormProps {
+  folders?: Folder[];
   onAdd: (account: Omit<LoLAccount, 'id' | 'createdAt' | 'tags'>) => void;
 }
 
-export function AddAccountForm({ onAdd }: AddAccountFormProps) {
+export function AddAccountForm({ folders = [], onAdd }: AddAccountFormProps) {
   const [riotId, setRiotId] = useState('');
   const [platform, setPlatform] = useState('br1');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedFolderId, setSelectedFolderId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -65,11 +67,13 @@ export function AddAccountForm({ onAdd }: AddAccountFormProps) {
         losses: riotData?.losses ?? 0,
         login: login.trim() || undefined,
         password: password || undefined,
+        folderId: selectedFolderId || undefined,
       });
 
       setRiotId('');
       setLogin('');
       setPassword('');
+      setSelectedFolderId('');
     } catch (err: any) {
       setError(err.message || 'Erro ao adicionar conta');
     } finally {
@@ -114,6 +118,20 @@ export function AddAccountForm({ onAdd }: AddAccountFormProps) {
             placeholder="Password"
             className="w-full bg-black/40 border border-white/10 text-gray-100 rounded-lg px-3 py-2 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 text-sm transition-all"
           />
+        </div>
+
+        <div className="w-full sm:w-auto min-w-[130px]">
+          <label className="block text-[10px] uppercase text-gray-500 mb-1.5 tracking-widest font-semibold">Pasta Target</label>
+          <select
+            value={selectedFolderId}
+            onChange={e => setSelectedFolderId(e.target.value)}
+            className="w-full bg-black/40 border border-white/10 text-gray-100 rounded-lg px-3 py-2 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none text-sm cursor-pointer"
+          >
+            <option value="">Raiz (Sem pasta)</option>
+            {folders.map(f => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
         </div>
         
         <div className="w-full sm:w-auto">

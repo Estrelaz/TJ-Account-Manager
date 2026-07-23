@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, UserCircle2, Eye, EyeOff, Copy, Check, FolderInput, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, StickyNote, RefreshCw, AlertCircle, X, GripVertical } from 'lucide-react';
+import { Trash2, UserCircle2, Eye, EyeOff, Copy, Check, FolderInput, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, StickyNote, RefreshCw, AlertCircle, X, GripVertical, ChevronRight } from 'lucide-react';
 import { LoLAccount, Tag, Folder } from '../types';
 import { TagEditor } from './TagEditor';
 
@@ -91,6 +91,7 @@ export function AccountCard({
     platform: account.platform || 'br1'
   });
   const [showFolderMenu, setShowFolderMenu] = useState(false);
+  const [showCopyMenu, setShowCopyMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState(account.notes || '');
@@ -181,29 +182,114 @@ export function AccountCard({
 
   if (isEditing) {
     return (
-      <div className="bg-[#161C24] border border-cyan-500/50 rounded-2xl p-5 shadow-xl flex flex-col gap-4 relative">
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-2">
-            <input type="text" value={editData.gameName} onChange={e => setEditData({...editData, gameName: e.target.value})} placeholder="Nome" className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-sm text-gray-100 outline-none focus:border-cyan-500/50" />
-            <span className="text-gray-500 self-center">#</span>
-            <input type="text" value={editData.tagLine} onChange={e => setEditData({...editData, tagLine: e.target.value})} placeholder="Tag" className="w-20 bg-black/40 border border-white/10 rounded px-2 py-1 text-sm text-gray-100 outline-none focus:border-cyan-500/50" />
+      <div className="bg-[#121820] border border-cyan-500/50 rounded-2xl p-5 shadow-2xl flex flex-col gap-4 relative animate-in fade-in zoom-in-95 duration-150">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400">
+              <Edit2 size={16} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-100">Editar Conta</h3>
+              <p className="text-[11px] text-gray-400">Atualize as informações do invocador</p>
+            </div>
+          </div>
+          <button 
+            type="button"
+            onClick={() => setIsEditing(false)} 
+            className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Inputs Form */}
+        <div className="flex flex-col gap-3.5">
+          {/* Riot ID & Tag */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Riot ID & Tag
+            </label>
+            <div className="flex items-center gap-2">
+              <input 
+                type="text" 
+                value={editData.gameName} 
+                onChange={e => setEditData({...editData, gameName: e.target.value})} 
+                placeholder="Nome do invocador" 
+                className="flex-1 bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all font-medium" 
+              />
+              <span className="text-cyan-400 font-mono font-bold text-sm">#</span>
+              <input 
+                type="text" 
+                value={editData.tagLine} 
+                onChange={e => setEditData({...editData, tagLine: e.target.value})} 
+                placeholder="Tag" 
+                className="w-20 bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all font-mono" 
+              />
+            </div>
           </div>
           
-          <select value={editData.platform} onChange={e => setEditData({...editData, platform: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-sm text-gray-100 outline-none focus:border-cyan-500/50">
-            <option value="br1">BR1</option>
-            <option value="na1">NA1</option>
-            <option value="euw1">EUW1</option>
-            <option value="kr">KR</option>
-            <option value="la1">LA1</option>
-            <option value="la2">LA2</option>
-          </select>
+          {/* Servidor */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Servidor
+            </label>
+            <select 
+              value={editData.platform} 
+              onChange={e => setEditData({...editData, platform: e.target.value})} 
+              className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-100 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer"
+            >
+              <option value="br1">BR1 - Brasil</option>
+              <option value="na1">NA1 - América do Norte</option>
+              <option value="euw1">EUW1 - Europa Ocidental</option>
+              <option value="eun1">EUN1 - Europa Nórdica & Leste</option>
+              <option value="kr">KR - Coreia</option>
+              <option value="la1">LA1 - América Latina Norte</option>
+              <option value="la2">LA2 - América Latina Sul</option>
+            </select>
+          </div>
 
-          <input type="text" value={editData.login} onChange={e => setEditData({...editData, login: e.target.value})} placeholder="Login" className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-sm text-gray-100 outline-none focus:border-cyan-500/50" />
-          <input type="text" value={editData.password} onChange={e => setEditData({...editData, password: e.target.value})} placeholder="Senha" className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-sm text-gray-100 outline-none focus:border-cyan-500/50" />
+          {/* Credenciais (Opcional) */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Credenciais de Acesso (Opcional)
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <input 
+                type="text" 
+                value={editData.login} 
+                onChange={e => setEditData({...editData, login: e.target.value})} 
+                placeholder="Login / Usuário" 
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all font-mono" 
+              />
+              <input 
+                type="text" 
+                value={editData.password} 
+                onChange={e => setEditData({...editData, password: e.target.value})} 
+                placeholder="Senha" 
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all font-mono" 
+              />
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2 justify-end">
-          <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors">Cancelar</button>
-          <button onClick={handleSaveEdit} className="px-3 py-1.5 text-xs font-medium bg-cyan-600 hover:bg-cyan-500 text-white rounded transition-colors">Salvar</button>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 justify-end pt-2 border-t border-white/10">
+          <button 
+            type="button"
+            onClick={() => setIsEditing(false)} 
+            className="px-3.5 py-1.5 text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="button"
+            onClick={handleSaveEdit} 
+            className="px-4 py-1.5 text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-black rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-1.5"
+          >
+            <Check size={14} />
+            Salvar
+          </button>
         </div>
       </div>
     );
@@ -253,7 +339,88 @@ export function AccountCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                setShowCopyMenu(!showCopyMenu);
+                setShowFolderMenu(false);
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-cyan-400 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Copy size={14} />
+                <span>Copiar Dados</span>
+              </div>
+              <ChevronRight size={14} className="text-gray-500" />
+            </button>
+            {showCopyMenu && (
+              <div className="absolute left-[95%] top-0 ml-1 w-52 bg-[#161C24] border border-white/10 rounded-lg shadow-2xl py-1 z-50 flex flex-col">
+                {account.login && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(account.login || '');
+                      setContextMenu(null);
+                      setShowCopyMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-cyan-300 flex items-center justify-between"
+                  >
+                    <span>Copiar Login</span>
+                    <span className="text-[10px] font-mono text-gray-500 truncate max-w-[80px]">{account.login}</span>
+                  </button>
+                )}
+                {account.password && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(account.password || '');
+                      setContextMenu(null);
+                      setShowCopyMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-cyan-300 flex items-center justify-between"
+                  >
+                    <span>Copiar Senha</span>
+                    <span className="text-[10px] font-mono text-gray-500">••••••••</span>
+                  </button>
+                )}
+                {account.login && account.password && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${account.login}:${account.password}`);
+                      setContextMenu(null);
+                      setShowCopyMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-cyan-300 font-semibold"
+                  >
+                    Copiar Login:Senha
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${account.gameName}#${account.tagLine}`);
+                    setContextMenu(null);
+                    setShowCopyMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-cyan-300 flex items-center justify-between"
+                >
+                  <span>Copiar Riot ID</span>
+                  <span className="text-[10px] font-mono text-gray-500">{account.gameName}#{account.tagLine}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(links.opgg);
+                    setContextMenu(null);
+                    setShowCopyMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 hover:text-cyan-300"
+                >
+                  Copiar Link OP.GG
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
                 setShowFolderMenu(!showFolderMenu);
+                setShowCopyMenu(false);
               }}
               className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-cyan-400 transition-colors"
             >
@@ -420,6 +587,7 @@ export function AccountCard({
         className={`bg-[#161C24] border ${isDragOver ? 'border-cyan-400 ring-2 ring-cyan-500/50 scale-[1.01]' : 'border-white/5'} rounded-2xl p-5 ${hoverBorder} transition-all shadow-xl flex flex-col gap-4 cursor-grab active:cursor-grabbing relative group`}
         draggable
         onDragStart={(e) => {
+          e.stopPropagation();
           e.dataTransfer.setData('accountId', account.id);
           e.dataTransfer.setData('type', 'account');
           e.dataTransfer.effectAllowed = 'move';

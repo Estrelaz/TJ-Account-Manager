@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Gamepad2, Inbox, Folder as FolderIcon, Plus, ChevronRight, Hash, Trash2, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, Upload, X, RefreshCw, AlertTriangle, Database, LogIn, Download, Tag as TagIcon } from 'lucide-react';
+import { Search, Gamepad2, Inbox, Folder as FolderIcon, Plus, ChevronRight, Hash, Trash2, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, Upload, X, RefreshCw, AlertTriangle, Database, LogIn, Download, Tag as TagIcon, Kanban, LayoutGrid } from 'lucide-react';
 import { read, utils } from 'xlsx';
 import { LoLAccount, Tag, Folder } from './types';
 import { AccountCard } from './components/AccountCard';
@@ -9,6 +9,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { ImportModal } from './components/ImportModal';
 import { ExportModal } from './components/ExportModal';
 import { PermanentTagsModal } from './components/PermanentTagsModal';
+import { BoardView } from './components/BoardView';
 import { parseAccountsFromFile } from './utils/importParser';
 import { supabase, isSupabaseConfigured, dbToAppAccount, dbToAppFolder, appToDBAccount, appToDBFolder, getUserProfile, signOut } from './lib/supabase';
 
@@ -51,19 +52,19 @@ const sortAccountsBySavedOrder = (accList: LoLAccount[], userId?: string | null)
 };
 
 export const FOLDER_COLORS = [
-  { id: 'cyan', classes: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', bg: 'bg-cyan-500', border: 'border-cyan-500/50' },
-  { id: 'blue', classes: 'bg-blue-500/10 text-blue-400 border-blue-500/20', bg: 'bg-blue-500', border: 'border-blue-500/50' },
-  { id: 'purple', classes: 'bg-purple-500/10 text-purple-400 border-purple-500/20', bg: 'bg-purple-500', border: 'border-purple-500/50' },
-  { id: 'fuchsia', classes: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20', bg: 'bg-fuchsia-500', border: 'border-fuchsia-500/50' },
-  { id: 'pink', classes: 'bg-pink-500/10 text-pink-400 border-pink-500/20', bg: 'bg-pink-500', border: 'border-pink-500/50' },
-  { id: 'red', classes: 'bg-red-500/10 text-red-400 border-red-500/20', bg: 'bg-red-500', border: 'border-red-500/50' },
-  { id: 'orange', classes: 'bg-orange-500/10 text-orange-400 border-orange-500/20', bg: 'bg-orange-500', border: 'border-orange-500/50' },
-  { id: 'yellow', classes: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', bg: 'bg-yellow-500', border: 'border-yellow-500/50' },
-  { id: 'lime', classes: 'bg-lime-500/10 text-lime-400 border-lime-500/20', bg: 'bg-lime-500', border: 'border-lime-500/50' },
-  { id: 'green', classes: 'bg-green-500/10 text-green-400 border-green-500/20', bg: 'bg-green-500', border: 'border-green-500/50' },
-  { id: 'emerald', classes: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', bg: 'bg-emerald-500', border: 'border-emerald-500/50' },
-  { id: 'teal', classes: 'bg-teal-500/10 text-teal-400 border-teal-500/20', bg: 'bg-teal-500', border: 'border-teal-500/50' },
-  { id: 'gray', classes: 'bg-gray-500/10 text-gray-400 border-gray-500/20', bg: 'bg-gray-500', border: 'border-gray-500/50' }
+  { id: 'cyan', classes: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', hoverClasses: 'hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-500/40', bg: 'bg-cyan-500', border: 'border-cyan-500/50' },
+  { id: 'blue', classes: 'bg-blue-500/10 text-blue-400 border-blue-500/20', hoverClasses: 'hover:bg-blue-500/15 hover:text-blue-300 hover:border-blue-500/40', bg: 'bg-blue-500', border: 'border-blue-500/50' },
+  { id: 'purple', classes: 'bg-purple-500/10 text-purple-400 border-purple-500/20', hoverClasses: 'hover:bg-purple-500/15 hover:text-purple-300 hover:border-purple-500/40', bg: 'bg-purple-500', border: 'border-purple-500/50' },
+  { id: 'fuchsia', classes: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20', hoverClasses: 'hover:bg-fuchsia-500/15 hover:text-fuchsia-300 hover:border-fuchsia-500/40', bg: 'bg-fuchsia-500', border: 'border-fuchsia-500/50' },
+  { id: 'pink', classes: 'bg-pink-500/10 text-pink-400 border-pink-500/20', hoverClasses: 'hover:bg-pink-500/15 hover:text-pink-300 hover:border-pink-500/40', bg: 'bg-pink-500', border: 'border-pink-500/50' },
+  { id: 'red', classes: 'bg-red-500/10 text-red-400 border-red-500/20', hoverClasses: 'hover:bg-red-500/15 hover:text-red-300 hover:border-red-500/40', bg: 'bg-red-500', border: 'border-red-500/50' },
+  { id: 'orange', classes: 'bg-orange-500/10 text-orange-400 border-orange-500/20', hoverClasses: 'hover:bg-orange-500/15 hover:text-orange-300 hover:border-orange-500/40', bg: 'bg-orange-500', border: 'border-orange-500/50' },
+  { id: 'yellow', classes: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', hoverClasses: 'hover:bg-yellow-500/15 hover:text-yellow-300 hover:border-yellow-500/40', bg: 'bg-yellow-500', border: 'border-yellow-500/50' },
+  { id: 'lime', classes: 'bg-lime-500/10 text-lime-400 border-lime-500/20', hoverClasses: 'hover:bg-lime-500/15 hover:text-lime-300 hover:border-lime-500/40', bg: 'bg-lime-500', border: 'border-lime-500/50' },
+  { id: 'green', classes: 'bg-green-500/10 text-green-400 border-green-500/20', hoverClasses: 'hover:bg-green-500/15 hover:text-green-300 hover:border-green-500/40', bg: 'bg-green-500', border: 'border-green-500/50' },
+  { id: 'emerald', classes: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', hoverClasses: 'hover:bg-emerald-500/15 hover:text-emerald-300 hover:border-emerald-500/40', bg: 'bg-emerald-500', border: 'border-emerald-500/50' },
+  { id: 'teal', classes: 'bg-teal-500/10 text-teal-400 border-teal-500/20', hoverClasses: 'hover:bg-teal-500/15 hover:text-teal-300 hover:border-teal-500/40', bg: 'bg-teal-500', border: 'border-teal-500/50' },
+  { id: 'gray', classes: 'bg-gray-500/10 text-gray-400 border-gray-500/20', hoverClasses: 'hover:bg-gray-500/15 hover:text-gray-200 hover:border-gray-500/40', bg: 'bg-gray-500', border: 'border-gray-500/50' }
 ];
 
 export const PRESET_ICONS = [
@@ -117,6 +118,10 @@ export default function App() {
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'board'>(() => {
+    const saved = localStorage.getItem('tj-view-mode');
+    return (saved === 'board' || saved === 'grid') ? saved : 'grid';
+  });
   const [showPermanentTagsModal, setShowPermanentTagsModal] = useState(false);
   const [permanentTags, setPermanentTags] = useState<Tag[]>(() => {
     const saved = localStorage.getItem('tj-permanent-tags');
@@ -264,10 +269,31 @@ export default function App() {
   }, [accounts, authUser]);
 
   useEffect(() => {
+    localStorage.setItem('tj-view-mode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
     if (!authUser) {
       localStorage.setItem('guest-lol-folders', JSON.stringify(folders));
     }
   }, [folders, authUser]);
+
+  const handleAddFolderDirect = (name: string, color?: string, icon?: string) => {
+    const newFolder: Folder = { id: crypto.randomUUID(), name, color: color || 'cyan', icon: icon || 'folder' };
+    setFolders(prev => [...prev, newFolder]);
+    syncFolderToCloud(newFolder);
+  };
+
+  const handleEditFolderDirect = (id: string, name: string, color?: string, icon?: string) => {
+    setFolders(prev => prev.map(f => {
+      if (f.id === id) {
+        const updated = { ...f, name, color: color || f.color, icon: icon || f.icon };
+        syncFolderToCloud(updated);
+        return updated;
+      }
+      return f;
+    }));
+  };
 
   const handleAddFolder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -380,6 +406,26 @@ export default function App() {
     });
   };
 
+  const handleReorderFolders = (draggedFolderId: string, targetFolderId: string) => {
+    if (draggedFolderId === targetFolderId) return;
+    setFolders(prev => {
+      const fromIndex = prev.findIndex(f => f.id === draggedFolderId);
+      const toIndex = prev.findIndex(f => f.id === targetFolderId);
+      if (fromIndex === -1 || toIndex === -1) return prev;
+
+      const next = [...prev];
+      const [movedFolder] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, movedFolder);
+
+      if (!authUser) {
+        localStorage.setItem('guest-lol-folders', JSON.stringify(next));
+      } else {
+        next.forEach(f => syncFolderToCloud(f));
+      }
+      return next;
+    });
+  };
+
 
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
 
@@ -485,15 +531,45 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0E13] text-gray-100 font-sans selection:bg-cyan-500/30 flex flex-col">
+    <div className="h-screen bg-[#0A0E13] text-gray-100 font-sans selection:bg-cyan-500/30 flex flex-col overflow-hidden">
       <nav className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-[#0F141B] shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white">
-            <Gamepad2 size={18} />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white">
+              <Gamepad2 size={18} />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-white hidden sm:block">
+              TJ <span className="text-cyan-400">Manager</span>
+            </h1>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-white">
-            TJ <span className="text-cyan-400">Manager</span>
-          </h1>
+
+          {/* Selector de Modo de Visualização (Grade vs Quadro / Trello) */}
+          <div className="flex items-center bg-[#161C24] border border-white/10 rounded-xl p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'grid' 
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm' 
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Modo Grade de Contas"
+            >
+              <LayoutGrid size={14} />
+              <span className="hidden md:inline">Grade</span>
+            </button>
+            <button
+              onClick={() => setViewMode('board')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'board' 
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm' 
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Modo Quadro (Estilo Trello)"
+            >
+              <Kanban size={14} />
+              <span className="hidden md:inline">Quadro</span>
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-4 hidden sm:flex">
           <input 
@@ -652,9 +728,47 @@ export default function App() {
         </div>
       </nav>
 
-      <div className="flex-1 overflow-hidden flex">
-        {/* Sidebar Folders */}
-        <aside className="w-64 border-r border-white/5 bg-[#0A0E13] flex flex-col shrink-0 overflow-y-auto">
+      {viewMode === 'board' ? (
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          {/* Add Account Header Bar in Board View */}
+          <div className="px-8 pt-4 pb-2 shrink-0 max-w-5xl mx-auto w-full">
+            <AddAccountForm folders={folders} onAdd={handleAddAccount} />
+          </div>
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <BoardView
+              accounts={accounts}
+              folders={folders}
+              permanentTags={permanentTags}
+              searchQuery={search}
+              onDeleteAccount={handleDeleteAccount}
+              onAddTag={handleAddTag}
+              onRemoveTag={handleRemoveTag}
+              onReorderTags={handleReorderTags}
+              onMoveToFolder={handleMoveToFolder}
+              onEditAccount={(id, updates) => {
+                setAccounts(prev => prev.map(a => {
+                  if (a.id === id) {
+                    const updated = { ...a, ...updates };
+                    syncAccountToCloud(updated);
+                    return updated;
+                  }
+                  return a;
+                }));
+              }}
+              onRefreshAccount={handleRefreshAccount}
+              onReorderAccounts={handleReorderAccounts}
+              onReorderFolders={handleReorderFolders}
+              onOpenPermanentTagsModal={() => setShowPermanentTagsModal(true)}
+              onAddFolder={handleAddFolderDirect}
+              onEditFolder={handleEditFolderDirect}
+              onDeleteFolder={(folder) => setFolderToDelete(folder)}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-hidden flex">
+          {/* Sidebar Folders */}
+          <aside className="w-64 border-r border-white/5 bg-[#0A0E13] flex flex-col shrink-0 overflow-y-auto">
           <div className="p-4">
             <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Organização</h2>
             
@@ -738,17 +852,31 @@ export default function App() {
                 return (
                   <button
                     key={folder.id}
+                    draggable
                     onClick={() => setActiveFolderId(folder.id)}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('folderId', folder.id);
+                      e.dataTransfer.setData('type', 'folder');
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
                     onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
                     onDrop={(e) => {
                       e.preventDefault();
                       const type = e.dataTransfer.getData('type');
-                      if (type !== 'account') return;
-                      const accountId = e.dataTransfer.getData('accountId');
-                      if (accountId) handleMoveToFolder(accountId, folder.id);
+                      if (type === 'folder') {
+                        const draggedFolderId = e.dataTransfer.getData('folderId');
+                        if (draggedFolderId && draggedFolderId !== folder.id) {
+                          handleReorderFolders(draggedFolderId, folder.id);
+                        }
+                      } else if (type === 'account') {
+                        const accountId = e.dataTransfer.getData('accountId');
+                        if (accountId) handleMoveToFolder(accountId, folder.id);
+                      }
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors group ${
-                      activeFolderId === folder.id ? folderColor.classes : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent'
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all group border ${
+                      activeFolderId === folder.id 
+                        ? `${folderColor.classes} font-bold shadow-sm` 
+                        : `text-gray-400 border-transparent ${folderColor.hoverClasses || 'hover:bg-white/5 hover:text-gray-200'}`
                     }`}
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
@@ -893,6 +1021,7 @@ export default function App() {
         </div>
       </div>
       </div>
+      )}
       
       {pendingImports.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
