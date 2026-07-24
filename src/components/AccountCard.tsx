@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trash2, UserCircle2, Eye, EyeOff, Copy, Check, FolderInput, Edit2, Shield, Star, Zap, Activity, Award, Flame, Target, Sparkles, Sword, Crown, Ghost, StickyNote, RefreshCw, AlertCircle, X, GripVertical, ChevronRight } from 'lucide-react';
 import { LoLAccount, Tag, Folder } from '../types';
 import { TagEditor } from './TagEditor';
+import { RankedAvatar } from './RankedAvatar';
 
 interface AccountCardProps {
   account: LoLAccount;
@@ -534,13 +535,13 @@ export function AccountCard({
             </div>
 
             <div className="bg-black/40 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
-              {account.profileIconUrl ? (
-                <img src={account.profileIconUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-white/10" referrerPolicy="no-referrer" />
-              ) : (
-                <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400">
-                  <UserCircle2 size={24} />
-                </div>
-              )}
+              <RankedAvatar 
+                iconUrl={account.profileIconUrl} 
+                tier={account.tier} 
+                summonerLevel={account.summonerLevel} 
+                size="sm" 
+                showLevel={false} 
+              />
               <div className="overflow-hidden">
                 <div className="font-bold text-sm text-gray-100 truncate">
                   {account.gameName} <span className="text-gray-500 font-normal">#{account.tagLine}</span>
@@ -614,26 +615,13 @@ export function AccountCard({
         onContextMenu={handleContextMenu}
       >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-4">
-          <div className="relative shrink-0">
-            {account.profileIconUrl ? (
-              <img
-                src={account.profileIconUrl}
-                alt="Profile"
-                className="w-16 h-16 rounded-xl border-2 border-cyan-500/30 object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-xl bg-[#2A3441] border-2 border-cyan-500/30 flex items-center justify-center text-gray-500">
-                <UserCircle2 size={32} />
-              </div>
-            )}
-            {account.summonerLevel && (
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 min-w-max px-1 bg-cyan-500 rounded-full border-2 border-[#161C24] flex items-center justify-center text-[10px] font-bold text-black">
-                {account.summonerLevel}
-              </div>
-            )}
-          </div>
+        <div className="flex items-center gap-3">
+          <RankedAvatar 
+            iconUrl={account.profileIconUrl} 
+            tier={account.tier} 
+            summonerLevel={account.summonerLevel} 
+            size="lg" 
+          />
           <div>
             <h3 className="font-bold text-lg text-gray-100 leading-tight">
               {account.gameName}

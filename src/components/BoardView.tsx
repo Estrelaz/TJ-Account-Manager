@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { LoLAccount, Folder, Tag } from '../types';
 import { AccountCard } from './AccountCard';
+import { RankedAvatar } from './RankedAvatar';
 
 interface BoardViewProps {
   accounts: LoLAccount[];
@@ -601,26 +602,15 @@ const CompactAccountCard: React.FC<CompactAccountCardProps> = ({
       >
         {/* Top Header: Avatar + Nick/Tag + Rank/Elo Badge */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            {/* Avatar Icon */}
-            <div className="relative shrink-0">
-              {account.profileIconUrl ? (
-                <img 
-                  src={account.profileIconUrl} 
-                  alt={account.gameName}
-                  className="w-10 h-10 rounded-lg object-cover border border-white/10 group-hover:border-cyan-400/50 transition-colors" 
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center text-cyan-400 group-hover:border-cyan-400/50 transition-colors">
-                  <UserCircle2 size={22} />
-                </div>
-              )}
-              {account.summonerLevel && (
-                <span className="absolute -bottom-1 -right-1 bg-black/90 text-[9px] font-mono text-cyan-300 px-1 rounded border border-cyan-500/30">
-                  {account.summonerLevel}
-                </span>
-              )}
-            </div>
+          <div className="flex items-center gap-2 overflow-hidden">
+            {/* Avatar Icon without Frame in Board View */}
+            <RankedAvatar 
+              iconUrl={account.profileIconUrl} 
+              tier={account.tier} 
+              summonerLevel={account.summonerLevel} 
+              size="sm" 
+              showFrame={false}
+            />
 
             {/* Nick and Tag */}
             <div className="overflow-hidden">
