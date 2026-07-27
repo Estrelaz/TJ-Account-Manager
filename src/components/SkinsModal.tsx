@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Search, Sparkles, Package, ShieldCheck, Diamond, Flame, Trophy } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Search, Sparkles, Package, Trophy } from 'lucide-react';
 import { LoLAccount, OwnedSkin, LootSkin } from '../types';
 import { getCachedImageUrl } from '../utils/imageUtils';
 
@@ -9,8 +9,31 @@ interface SkinsModalProps {
   onClose: () => void;
 }
 
+// Mapa de exceções de nomes de campeões no DataDragon
+const CHAMPION_NAME_MAP: Record<string, string> = {
+  'Nunu & Willump': 'Nunu',
+  'Renata Glasc': 'Renata',
+  'Wukong': 'MonkeyKing',
+  'Kog\'Maw': 'KogMaw',
+  'K\'Sante': 'KSante',
+  'Dr. Mundo': 'DrMundo',
+  'Bel\'Veth': 'Belveth',
+};
+
 const SkinCardImage: React.FC<{ skin: OwnedSkin | LootSkin; fallbackName?: string }> = ({ skin, fallbackName }) => {
-  const champName = (skin as OwnedSkin).champion_name || fallbackName || '';
+  // Tenta obter o nome puro do campeão (evitando usar o nome da skin como nome do campeão)
+  let champName = (skin as OwnedSkin).champion_name || '';
+
+  if (!champName && skin.skin_name) {
+    // Se não houver champion_name (comum em LootSkin), tenta pegar a primeira palavra antes da skin
+    // Ex: "Jinx Guardiã Estelar" -> pode tentar extrair "Jinx" se necessário, ou usar mapeamento
+    const knownChamps = Object.keys(CHAMPION_NAME_MAP);
+    const foundKnown = knownChamps.find(c => skin.skin_name.toLowerCase().includes(c.toLowerCase()));
+    if (foundKnown) {
+      champName = foundKnown;
+    }
+  }
+
   const sId = skin.skin_id;
   const sNum = (skin as any).skin_num !== undefined 
     ? (skin as any).skin_num 
@@ -18,31 +41,36 @@ const SkinCardImage: React.FC<{ skin: OwnedSkin | LootSkin; fallbackName?: strin
 
   const candidates: string[] = [];
 
+  // 1. URL Direta (gerada pelo script Python)
   if (skin.splash_url) candidates.push(skin.splash_url);
 
+  // 2. DataDragon Splashes (Apenas se tivermos um nome válido de campeão)
   if (champName) {
-    const cleanChamp = champName
-      .replace(/['\s.]/g, '')
-      .replace('&', '')
-      .replace('Wukong', 'MonkeyKing');
-    
+    let cleanChamp = CHAMPION_NAME_MAP[champName] || champName.replace(/['\s.]/g, '').replace('&', '');
     candidates.push(`https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${cleanChamp}_${sNum}.jpg`);
     candidates.push(`https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${cleanChamp}_${sNum}.jpg`);
   }
 
+  // 3. Tile URLs / CommunityDragon (Muito confiável via Skin ID puro)
   if (skin.tile_url) candidates.push(skin.tile_url);
-
-  if (champName) {
-    const cleanChamp = champName.replace(/['\s.]/g, '').replace('&', '').replace('Wukong', 'MonkeyKing');
-    candidates.push(`https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/${cleanChamp}_0.jpg`);
-  }
 
   if (sId && Number(sId) > 0) {
     candidates.push(`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/${sId}.jpg`);
+    
+    // Fallback de Splash via CommunityDragon usando Skin ID
+    const champId = (skin as any).champion_id || Math.floor(Number(sId) / 1000);
+    if (champId > 0) {
+      candidates.push(`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-splashes/${champId}/${sId}.jpg`);
+    }
   }
 
   const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
   const [candidateIdx, setCandidateIdx] = useState<number>(0);
+
+  // Reseta o índice da imagem quando a skin mudar (Corrige o bug de reuso do componente)
+  useEffect(() => {
+    setCandidateIdx(0);
+  }, [skin.skin_id, skin.skin_name]);
 
   const currentUrl = uniqueCandidates[candidateIdx] 
     ? getCachedImageUrl(uniqueCandidates[candidateIdx]) 
@@ -230,7 +258,7 @@ export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {filteredOwned.map((skin, idx) => (
                   <div
-                    key={skin.skin_id || idx}
+                    key={`${skin.skin_id || 'owned'}-${idx}`}
                     className="bg-[#161C24] border border-white/10 hover:border-cyan-500/50 rounded-xl overflow-hidden group transition-all relative flex flex-col"
                   >
                     <div className="h-32 bg-gray-900 relative overflow-hidden">
@@ -273,7 +301,7 @@ export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {filteredLoot.map((skin, idx) => (
                   <div
-                    key={skin.skin_id || idx}
+                    key={`${skin.skin_id || 'loot'}-${idx}`}
                     className="bg-[#161C24] border border-amber-500/20 hover:border-amber-500/60 rounded-xl overflow-hidden group transition-all relative flex flex-col"
                   >
                     <div className="h-32 bg-gray-900 relative overflow-hidden">
