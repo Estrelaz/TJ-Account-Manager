@@ -606,13 +606,14 @@ const CompactAccountCard: React.FC<CompactAccountCardProps> = ({
         {/* Top Header: Avatar + Nick/Tag + Rank/Elo Badge */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 overflow-hidden">
-            {/* Avatar Icon without Frame in Board View */}
+            {/* Avatar Icon without Frame or Level in Board View */}
             <RankedAvatar 
               iconUrl={account.profileIconUrl} 
               tier={account.tier} 
               summonerLevel={account.summonerLevel} 
               size="sm" 
               showFrame={false}
+              showLevel={false}
             />
 
             {/* Nick and Tag */}
@@ -639,16 +640,10 @@ const CompactAccountCard: React.FC<CompactAccountCardProps> = ({
           </div>
         </div>
 
-        {/* Essências & Skins Pill */}
-        {(account.blueEssence || account.orangeEssence || account.ownedSkinsCount) ? (
-          <div className="flex items-center gap-2 text-[10px] font-mono bg-black/40 px-2 py-1 rounded border border-white/5 justify-between">
-            <span className="text-blue-300">💎 {(account.blueEssence ?? 0).toLocaleString('pt-BR')}</span>
-            <span className="text-orange-300">🟠 {(account.orangeEssence ?? 0).toLocaleString('pt-BR')}</span>
-            {account.ownedSkinsCount ? (
-              <span className="text-purple-300 font-bold">✨ {account.ownedSkinsCount}</span>
-            ) : null}
-          </div>
-        ) : null}
+        {/* Somente EA posicionado na esquerda */}
+        <div className="flex items-center justify-start text-[10px] font-mono bg-black/40 px-2.5 py-1 rounded-lg border border-white/5">
+          <span className="text-blue-300 font-bold">💎 {(account.blueEssence ?? 0).toLocaleString('pt-BR')} EA</span>
+        </div>
 
         {/* Winrate / Record & Tags Footer */}
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">

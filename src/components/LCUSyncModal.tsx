@@ -172,12 +172,15 @@ def sincronizar_conta_completa():
             frag_skin_count += count
             name = item.get('itemDesc', item.get('lootName', 'Skin'))
             nomes_frag_skin.append(name)
+            s_item_id = item.get('storeItemId', 0)
             skins_espolio_detalhadas.append({
-                'skin_id': item.get('storeItemId', 0),
+                'skin_id': s_item_id,
                 'champion_id': 0,
                 'skin_name': name,
                 'is_permanent': 'RENTAL' not in type_str,
-                'count': count
+                'count': count,
+                'tile_url': f"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/{s_item_id}.jpg" if s_item_id else None,
+                'splash_url': f"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-splashes/{s_item_id}.jpg" if s_item_id else None
             })
 
     # 4. Skins Habilitadas
@@ -188,14 +191,14 @@ def sincronizar_conta_completa():
         all_skins = skins_res.json()
         for s in all_skins:
             if s.get('ownership', {}).get('owned', False):
-                raw_tile = f"https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/{s.get('championName', '')}_0.jpg" if s.get('championName') else None
-                tile_url = f"https://wsrv.nl/?url={raw_tile}" if raw_tile else None
+                skin_id_val = s.get('id')
                 owned_skins_detalhes.append({
-                    'skin_id': s.get('id'),
+                    'skin_id': skin_id_val,
                     'champion_id': s.get('championId'),
                     'skin_name': s.get('name'),
                     'champion_name': s.get('championName', ''),
-                    'tile_url': tile_url
+                    'tile_url': f"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/{skin_id_val}.jpg" if skin_id_val else None,
+                    'splash_url': f"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-splashes/{skin_id_val}.jpg" if skin_id_val else None
                 })
 
     dados_conta = {

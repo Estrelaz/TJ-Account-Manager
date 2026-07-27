@@ -9,6 +9,53 @@ interface SkinsModalProps {
   onClose: () => void;
 }
 
+const SkinCardImage: React.FC<{ skin: OwnedSkin | LootSkin; fallbackName?: string }> = ({ skin, fallbackName }) => {
+  const skinId = skin.skin_id;
+  const primaryUrl = skin.tile_url || skin.splash_url;
+  
+  const cdTileUrl = skinId && Number(skinId) > 0 ? `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/${skinId}.jpg` : null;
+  const cdSplashUrl = skinId && Number(skinId) > 0 ? `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-splashes/${skinId}.jpg` : null;
+
+  const initialUrl = cdTileUrl || primaryUrl || cdSplashUrl;
+  const [src, setSrc] = useState<string | null>(initialUrl ? getCachedImageUrl(initialUrl) : null);
+  const [stage, setStage] = useState<number>(0);
+
+  const handleError = () => {
+    if (stage === 0 && cdTileUrl) {
+      setStage(1);
+      setSrc(cdTileUrl);
+    } else if (stage <= 1 && cdSplashUrl) {
+      setStage(2);
+      setSrc(cdSplashUrl);
+    } else if (stage <= 2 && primaryUrl && primaryUrl !== cdTileUrl) {
+      setStage(3);
+      setSrc(primaryUrl);
+    } else {
+      setStage(4);
+      setSrc(null);
+    }
+  };
+
+  if (!src || stage >= 4) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-cyan-950/30 text-cyan-400/60 font-bold text-xs p-2 text-center">
+        <Sparkles size={20} className="mb-1 opacity-50" />
+        <span className="line-clamp-2">{skin.skin_name || fallbackName || 'Skin'}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={skin.skin_name || 'Skin'}
+      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+      loading="lazy"
+      onError={handleError}
+    />
+  );
+};
+
 export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'owned' | 'loot'>('owned');
   const [searchTerm, setSearchTerm] = useState('');
@@ -167,19 +214,8 @@ export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose
                     className="bg-[#161C24] border border-white/10 hover:border-cyan-500/50 rounded-xl overflow-hidden group transition-all relative flex flex-col"
                   >
                     <div className="h-32 bg-gray-900 relative overflow-hidden">
-                      {skin.tile_url || skin.splash_url ? (
-                        <img
-                          src={getCachedImageUrl(skin.tile_url || skin.splash_url)}
-                          alt={skin.skin_name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-cyan-950/30 text-cyan-500/40 font-bold text-xs">
-                          {skin.champion_name || 'LoL Skin'}
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#161C24] via-transparent to-transparent" />
+                      <SkinCardImage skin={skin} fallbackName={skin.champion_name} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#161C24] via-transparent to-transparent pointer-events-none" />
                     </div>
                     <div className="p-2.5 flex flex-col justify-between flex-1">
                       <div>
@@ -221,22 +257,11 @@ export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose
                     className="bg-[#161C24] border border-amber-500/20 hover:border-amber-500/60 rounded-xl overflow-hidden group transition-all relative flex flex-col"
                   >
                     <div className="h-32 bg-gray-900 relative overflow-hidden">
-                      {skin.tile_url || skin.splash_url ? (
-                        <img
-                          src={getCachedImageUrl(skin.tile_url || skin.splash_url)}
-                          alt={skin.skin_name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-amber-950/30 text-amber-500/40 font-bold text-xs">
-                          Fragmento
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2 bg-black/70 border border-amber-500/40 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      <SkinCardImage skin={skin} fallbackName={skin.skin_name} />
+                      <div className="absolute top-2 right-2 bg-black/70 border border-amber-500/40 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full z-10">
                         {skin.is_permanent ? 'Permanente' : 'Fragmento'}
                       </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#161C24] via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#161C24] via-transparent to-transparent pointer-events-none" />
                     </div>
                     <div className="p-2.5 flex flex-col justify-between flex-1">
                       <h4 className="text-xs font-bold text-amber-200 leading-snug line-clamp-2">

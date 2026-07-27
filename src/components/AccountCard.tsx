@@ -706,7 +706,7 @@ export function AccountCard({
               <img src={getCachedImageUrl("https://pbs.twimg.com/profile_images/1841544879639560192/6isnQg8G.jpg")} className="w-7 h-7 rounded-lg shadow-sm" alt="U.GG" />
             </a>
             <a href={links.log} target="_blank" rel="noreferrer" title="League of Graphs" className="hover:scale-110 transition-transform active:scale-95 grayscale hover:grayscale-0">
-              <img src={getCachedImageUrl("https://i.postimg.cc/YqpK2skW/league-of-graphs.webp")} className="w-7 h-7 rounded-lg shadow-sm" alt="League of Graphs" />
+              <img src={getCachedImageUrl("https://i.postimg.cc/dQnVtMq2/Lo-G.png")} className="w-7 h-7 rounded-lg shadow-sm" alt="League of Graphs" />
             </a>
          </div>
       </div>
@@ -762,7 +762,7 @@ export function AccountCard({
 
         <div className="grid grid-cols-2 gap-1.5 text-xs font-mono font-bold">
           <div className="bg-[#121820] border border-blue-500/20 px-2 py-1 rounded-lg flex items-center justify-between">
-            <span className="text-[10px] text-blue-400 font-sans font-semibold">AZUL</span>
+            <span className="text-[10px] text-blue-400 font-sans font-semibold">EA</span>
             <span className="text-blue-300">💎 {(account.blueEssence ?? 0).toLocaleString('pt-BR')}</span>
           </div>
           <div className="bg-[#121820] border border-red-500/20 px-2 py-1 rounded-lg flex items-center justify-between">
@@ -771,25 +771,16 @@ export function AccountCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-sans pt-0.5 border-t border-white/5 flex-wrap">
-          <span className="bg-orange-500/10 text-orange-300 border border-orange-500/20 px-1.5 py-0.5 rounded font-semibold">
-            🟠 {(account.orangeEssence ?? 0).toLocaleString('pt-BR')} Laranja
-          </span>
-          {account.ownedSkinsCount ? (
-            <span className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded font-semibold">
-              ✨ {account.ownedSkinsCount} skins
-            </span>
-          ) : null}
-          {account.skinShardsCount ? (
-            <span className="bg-pink-500/10 text-pink-300 border border-pink-500/20 px-1.5 py-0.5 rounded font-semibold">
-              🎨 {account.skinShardsCount} frag.
-            </span>
-          ) : null}
-          {account.chestsCount ? (
-            <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-semibold">
-              📦 {account.chestsCount} baús hextech
-            </span>
-          ) : null}
+        <div className="grid grid-cols-3 gap-1.5 text-[10px] font-sans pt-0.5 border-t border-white/5 text-center font-semibold">
+          <div className="bg-purple-500/10 text-purple-300 border border-purple-500/20 py-1 px-0.5 rounded flex items-center justify-center gap-1 truncate" title={`${account.ownedSkinsCount ?? 0} Skins`}>
+            ✨ <span>{account.ownedSkinsCount ?? 0} Skins</span>
+          </div>
+          <div className="bg-pink-500/10 text-pink-300 border border-pink-500/20 py-1 px-0.5 rounded flex items-center justify-center gap-1 truncate" title={`${account.skinShardsCount ?? 0} Shards`}>
+            🎨 <span>{account.skinShardsCount ?? 0} Shards</span>
+          </div>
+          <div className="bg-orange-500/10 text-orange-300 border border-orange-500/20 py-1 px-0.5 rounded flex items-center justify-center gap-1 truncate" title={`${(account.orangeEssence ?? 0).toLocaleString('pt-BR')} EL`}>
+            🟠 <span>{(account.orangeEssence ?? 0).toLocaleString('pt-BR')} EL</span>
+          </div>
         </div>
       </div>
 
