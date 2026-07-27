@@ -10,33 +10,53 @@ interface SkinsModalProps {
 }
 
 const SkinCardImage: React.FC<{ skin: OwnedSkin | LootSkin; fallbackName?: string }> = ({ skin, fallbackName }) => {
-  const skinId = skin.skin_id;
-  const primaryUrl = skin.tile_url || skin.splash_url;
-  
-  const cdTileUrl = skinId && Number(skinId) > 0 ? `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/${skinId}.jpg` : null;
-  const cdSplashUrl = skinId && Number(skinId) > 0 ? `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-splashes/${skinId}.jpg` : null;
+  const champName = (skin as OwnedSkin).champion_name || fallbackName || '';
+  const sId = skin.skin_id;
+  const sNum = (skin as any).skin_num !== undefined 
+    ? (skin as any).skin_num 
+    : (sId ? sId % 1000 : 0);
 
-  const initialUrl = cdTileUrl || primaryUrl || cdSplashUrl;
-  const [src, setSrc] = useState<string | null>(initialUrl ? getCachedImageUrl(initialUrl) : null);
-  const [stage, setStage] = useState<number>(0);
+  const candidates: string[] = [];
+
+  if (skin.splash_url) candidates.push(skin.splash_url);
+
+  if (champName) {
+    const cleanChamp = champName
+      .replace(/['\s.]/g, '')
+      .replace('&', '')
+      .replace('Wukong', 'MonkeyKing');
+    
+    candidates.push(`https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${cleanChamp}_${sNum}.jpg`);
+    candidates.push(`https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${cleanChamp}_${sNum}.jpg`);
+  }
+
+  if (skin.tile_url) candidates.push(skin.tile_url);
+
+  if (champName) {
+    const cleanChamp = champName.replace(/['\s.]/g, '').replace('&', '').replace('Wukong', 'MonkeyKing');
+    candidates.push(`https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/${cleanChamp}_0.jpg`);
+  }
+
+  if (sId && Number(sId) > 0) {
+    candidates.push(`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/${sId}.jpg`);
+  }
+
+  const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
+  const [candidateIdx, setCandidateIdx] = useState<number>(0);
+
+  const currentUrl = uniqueCandidates[candidateIdx] 
+    ? getCachedImageUrl(uniqueCandidates[candidateIdx]) 
+    : null;
 
   const handleError = () => {
-    if (stage === 0 && cdTileUrl) {
-      setStage(1);
-      setSrc(cdTileUrl);
-    } else if (stage <= 1 && cdSplashUrl) {
-      setStage(2);
-      setSrc(cdSplashUrl);
-    } else if (stage <= 2 && primaryUrl && primaryUrl !== cdTileUrl) {
-      setStage(3);
-      setSrc(primaryUrl);
+    if (candidateIdx + 1 < uniqueCandidates.length) {
+      setCandidateIdx(prev => prev + 1);
     } else {
-      setStage(4);
-      setSrc(null);
+      setCandidateIdx(uniqueCandidates.length);
     }
   };
 
-  if (!src || stage >= 4) {
+  if (!currentUrl || candidateIdx >= uniqueCandidates.length) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-cyan-950/30 text-cyan-400/60 font-bold text-xs p-2 text-center">
         <Sparkles size={20} className="mb-1 opacity-50" />
@@ -47,7 +67,7 @@ const SkinCardImage: React.FC<{ skin: OwnedSkin | LootSkin; fallbackName?: strin
 
   return (
     <img
-      src={src}
+      src={currentUrl}
       alt={skin.skin_name || 'Skin'}
       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
       loading="lazy"

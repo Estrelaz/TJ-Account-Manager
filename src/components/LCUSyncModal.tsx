@@ -190,15 +190,30 @@ def sincronizar_conta_completa():
     if skins_res.status_code == 200:
         all_skins = skins_res.json()
         for s in all_skins:
-            if s.get('ownership', {}).get('owned', False):
-                skin_id_val = s.get('id')
+            if s.get('ownership', {}).get('owned', False) and not s.get('isBase', False):
+                skin_id = s.get('id')                   # ex: 222018
+                champion_id = s.get('championId')       # ex: 222
+                skin_name = s.get('name')               # ex: "Jinx Guardiã Estelar"
+                champion_name = s.get('championName')   # ex: "Jinx"
+                
+                # 💡 Extrai o número da skin usando o resto da divisão (%)
+                skin_num = skin_id % 1000 if skin_id else 0
+                
+                # 🖼️ Monta a URL da Splash Art do Data Dragon
+                splash_url = f"https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{champion_name}_{skin_num}.jpg" if champion_name else None
+                
+                # 🔲 Ícone Quadrado (Tile)
+                raw_tile = f"https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/{champion_name}_0.jpg" if champion_name else None
+                tile_url = f"https://wsrv.nl/?url={raw_tile}" if raw_tile else None
+                
                 owned_skins_detalhes.append({
-                    'skin_id': skin_id_val,
-                    'champion_id': s.get('championId'),
-                    'skin_name': s.get('name'),
-                    'champion_name': s.get('championName', ''),
-                    'tile_url': f"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-tiles/{skin_id_val}.jpg" if skin_id_val else None,
-                    'splash_url': f"https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-splashes/{skin_id_val}.jpg" if skin_id_val else None
+                    'skin_id': skin_id,
+                    'skin_num': skin_num,
+                    'champion_id': champion_id,
+                    'champion_name': champion_name,
+                    'skin_name': skin_name,
+                    'splash_url': splash_url,
+                    'tile_url': tile_url
                 })
 
     dados_conta = {
