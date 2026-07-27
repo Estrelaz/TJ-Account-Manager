@@ -79,6 +79,31 @@ export default async function handler(req: any, res: any) {
       try {
         const supabase = createClient(supabaseUrl, supabaseKey);
 
+        const normalizeStr = (str: any) => {
+          if (!str) return '';
+          return String(str).toLowerCase().replace(/#/g, '').replace(/\s+/g, ' ').trim();
+        };
+
+        // Busca todas as contas registradas nas tabelas 'accounts' e 'lol_accounts'
+        let targetTable = 'accounts';
+        let { data: dbAccounts, error: fetchErr } = await supabase
+          .from('accounts')
+          .select('*');
+
+        if (fetchErr) {
+          dbLogs.push(`Aviso na busca na tabela 'accounts': ${fetchErr.message}`);
+        }
+
+        let allDbAccounts: any[] = (dbAccounts || []).map(a => ({ ...a, _table: 'accounts' }));
+
+        // Tenta também na tabela 'lol_accounts' se existir
+        try {
+          const { data: lolAccs } = await supabase.from('lol_accounts').select('*');
+          if (lolAccs && lolAccs.length > 0) {
+            allDbAccounts = [...allDbAccounts, ...lolAccs.map(a => ({ ...a, _table: 'lol_accounts' }))];
+          }
+        } catch (_) {}
+
         for (const item of normalizedList) {
           const updatePayload = {
             blue_essence: item.blueEssence,
@@ -95,56 +120,60 @@ export default async function handler(req: any, res: any) {
             last_synced_at: item.lastSyncedAt
           };
 
-          // Tentar primeiro na tabela 'accounts'
-          let tableName = 'accounts';
-          let { data: existing, error: findErr } = await supabase
-            .from('accounts')
-            .select('*')
-            .ilike('game_name', item.gameName)
-            .ilike('tag_line', item.tagLine)
-            .maybeSingle();
+          const targetGameName = normalizeStr(item.gameName);
+          const targetTagLine = normalizeStr(item.tagLine);
 
-          // Se não achou em accounts por game_name+tag_line, tenta por login
-          if (!existing) {
-            const { data: existingByLogin } = await supabase
-              .from('accounts')
-              .select('*')
-              .ilike('login', item.gameName)
-              .maybeSingle();
-            if (existingByLogin) existing = existingByLogin;
+          // Procura correspondência flexível na lista trazida do banco
+          let matched = allDbAccounts.find(acc => {
+            const accGameName = normalizeStr(acc.game_name);
+            const accTagLine = normalizeStr(acc.tag_line);
+            const accLogin = normalizeStr(acc.login);
+
+            // 1. Nome do jogo bate exato (ignora maiúsculas, minúsculas e espaços)
+            if (accGameName === targetGameName) {
+              // Se a tag line coincidir ou uma das duas estiver vazia/com ou sem #
+              if (!targetTagLine || !accTagLine || accTagLine === targetTagLine) {
+                return true;
+              }
+            }
+
+            // 2. Tenta bater pelo login cadastrado na conta
+            if (accLogin && (accLogin === targetGameName || accLogin === `${targetGameName}${targetTagLine}`)) {
+              return true;
+            }
+
+            return false;
+          });
+
+          // Se não encontrou com tag rigorosa, tenta casar só pelo game_name
+          if (!matched) {
+            matched = allDbAccounts.find(acc => normalizeStr(acc.game_name) === targetGameName);
           }
 
-          // Se não achou na tabela 'accounts', tenta em 'lol_accounts'
-          if (!existing) {
-            tableName = 'lol_accounts';
-            const { data: existingLol } = await supabase
-              .from('lol_accounts')
-              .select('*')
-              .ilike('game_name', item.gameName)
-              .ilike('tag_line', item.tagLine)
-              .maybeSingle();
-            if (existingLol) existing = existingLol;
-          }
-
-          if (existing) {
+          if (matched) {
             const { error: updateErr } = await supabase
-              .from(tableName)
+              .from(matched._table || 'accounts')
               .update(updatePayload)
-              .eq('id', existing.id);
+              .eq('id', matched.id);
 
             if (updateErr) {
-              dbLogs.push(`Erro ao atualizar ${item.gameName}#${item.tagLine} na tabela ${tableName}: ${updateErr.message}`);
+              dbLogs.push(`Erro ao atualizar ID ${matched.id} (${matched.game_name}) no Supabase: ${updateErr.message}`);
             } else {
               updatedInDb = true;
-              dbLogs.push(`Conta ${item.gameName}#${item.tagLine} atualizada com sucesso na tabela '${tableName}'!`);
+              dbLogs.push(`Conta '${matched.game_name}#${matched.tag_line || 'BR1'}' atualizada com sucesso no Supabase!`);
             }
           } else {
-            dbLogs.push(`Nenhuma conta encontrada com o nome '${item.gameName}#${item.tagLine}' nas tabelas 'accounts' ou 'lol_accounts'.`);
+            if (allDbAccounts.length === 0) {
+              dbLogs.push(`O banco retornou 0 contas cadastradas. Se você criou a conta no site, verifique se o RLS (Row Level Security) está desativado na tabela 'accounts' no Supabase ou se configurou SUPABASE_SERVICE_ROLE_KEY no Vercel.`);
+            } else {
+              const existingList = allDbAccounts.map(a => `'${a.game_name || a.login}#${a.tag_line || ''}'`).join(', ');
+              dbLogs.push(`Conta '${item.gameName}#${item.tagLine}' não encontrada no Supabase. Contas encontradas no seu banco: [${existingList}]. Verifique o nome/tag ou cadastre no site.`);
+            }
           }
         }
       } catch (dbErr: any) {
         console.error('Supabase auto update error:', dbErr);
-        dbLogs.push(`Erro geral de conexão ao Supabase: ${dbErr.message || dbErr}`);
+        dbLogs.push(`Erro de conexão ao Supabase: ${dbErr.message || dbErr}`);
       }
     } else {
       dbLogs.push('Chaves do Supabase não configuradas no ambiente do Vercel (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
