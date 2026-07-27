@@ -24,6 +24,7 @@ interface BoardViewProps {
   onReorderAccounts?: (draggedAccountId: string, targetAccountId: string) => void;
   onReorderFolders?: (draggedFolderId: string, targetFolderId: string) => void;
   onOpenPermanentTagsModal?: () => void;
+  onOpenSkinsModal?: (account: LoLAccount) => void;
   onAddFolder: (name: string, color?: string, icon?: string) => void;
   onEditFolder: (id: string, name: string, color?: string, icon?: string) => void;
   onDeleteFolder: (folder: Folder) => void;
@@ -120,6 +121,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
   onReorderAccounts,
   onReorderFolders,
   onOpenPermanentTagsModal,
+  onOpenSkinsModal,
   onAddFolder,
   onEditFolder,
   onDeleteFolder,
@@ -520,6 +522,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
               onRefresh={onRefreshAccount}
               onReorderAccounts={onReorderAccounts}
               onOpenPermanentTagsModal={onOpenPermanentTagsModal}
+              onOpenSkinsModal={onOpenSkinsModal}
             />
           </div>
         </div>
@@ -635,6 +638,17 @@ const CompactAccountCard: React.FC<CompactAccountCardProps> = ({
             )}
           </div>
         </div>
+
+        {/* Essências & Skins Pill */}
+        {(account.blueEssence || account.orangeEssence || account.ownedSkinsCount) ? (
+          <div className="flex items-center gap-2 text-[10px] font-mono bg-black/40 px-2 py-1 rounded border border-white/5 justify-between">
+            <span className="text-blue-300">💎 {(account.blueEssence ?? 0).toLocaleString('pt-BR')}</span>
+            <span className="text-orange-300">🟠 {(account.orangeEssence ?? 0).toLocaleString('pt-BR')}</span>
+            {account.ownedSkinsCount ? (
+              <span className="text-purple-300 font-bold">✨ {account.ownedSkinsCount}</span>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Winrate / Record & Tags Footer */}
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">

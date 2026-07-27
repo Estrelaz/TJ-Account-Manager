@@ -75,6 +75,18 @@ export interface DBAccount {
   folder_id?: string | null;
   tags?: any;
   created_at: number;
+  blue_essence?: number;
+  orange_essence?: number;
+  skin_shards_count?: number;
+  champion_shards_count?: number;
+  chests_count?: number;
+  keys_count?: number;
+  key_fragments_count?: number;
+  owned_skins_count?: number;
+  owned_skins?: any;
+  loot_skins?: any;
+  loot_skin_names?: any;
+  last_synced_at?: number;
 }
 
 // Conversores de tipo
@@ -106,7 +118,19 @@ export function dbToAppAccount(db: DBAccount): LoLAccount {
     notes: db.notes,
     folderId: db.folder_id,
     tags: Array.isArray(db.tags) ? db.tags : [],
-    createdAt: db.created_at || Date.now()
+    createdAt: db.created_at || Date.now(),
+    blueEssence: db.blue_essence ?? 0,
+    orangeEssence: db.orange_essence ?? 0,
+    skinShardsCount: db.skin_shards_count ?? 0,
+    championShardsCount: db.champion_shards_count ?? 0,
+    chestsCount: db.chests_count ?? 0,
+    keysCount: db.keys_count ?? 0,
+    keyFragmentsCount: db.key_fragments_count ?? 0,
+    ownedSkinsCount: db.owned_skins_count ?? 0,
+    ownedSkins: Array.isArray(db.owned_skins) ? db.owned_skins : [],
+    lootSkins: Array.isArray(db.loot_skins) ? db.loot_skins : [],
+    lootSkinNames: Array.isArray(db.loot_skin_names) ? db.loot_skin_names : [],
+    lastSyncedAt: db.last_synced_at
   };
 }
 
@@ -140,7 +164,19 @@ export function appToDBAccount(acc: LoLAccount, userId: string): DBAccount {
     notes: acc.notes,
     folder_id: acc.folderId || null,
     tags: acc.tags || [],
-    created_at: acc.createdAt || Date.now()
+    created_at: acc.createdAt || Date.now(),
+    blue_essence: acc.blueEssence ?? 0,
+    orange_essence: acc.orangeEssence ?? 0,
+    skin_shards_count: acc.skinShardsCount ?? 0,
+    champion_shards_count: acc.championShardsCount ?? 0,
+    chests_count: acc.chestsCount ?? 0,
+    keys_count: acc.keysCount ?? 0,
+    key_fragments_count: acc.keyFragmentsCount ?? 0,
+    owned_skins_count: acc.ownedSkinsCount ?? 0,
+    owned_skins: acc.ownedSkins || [],
+    loot_skins: acc.lootSkins || [],
+    loot_skin_names: acc.lootSkinNames || [],
+    last_synced_at: acc.lastSyncedAt
   };
 }
 

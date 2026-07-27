@@ -17,6 +17,7 @@ interface AccountCardProps {
   onRefresh?: (accountId: string) => Promise<{ success: boolean; error?: string }>;
   onReorderAccounts?: (draggedAccountId: string, targetAccountId: string) => void;
   onOpenPermanentTagsModal?: () => void;
+  onOpenSkinsModal?: (account: LoLAccount) => void;
 }
 
 const IconMapper: Record<string, React.ElementType> = {
@@ -77,7 +78,8 @@ export function AccountCard({
   onEdit, 
   onRefresh, 
   onReorderAccounts, 
-  onOpenPermanentTagsModal 
+  onOpenPermanentTagsModal,
+  onOpenSkinsModal
 }: AccountCardProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [copiedLogin, setCopiedLogin] = useState(false);
@@ -741,6 +743,58 @@ export function AccountCard({
           )}
         </div>
       )}
+
+      {/* Essências & Inventário do Cliente LoL */}
+      <div 
+        onClick={() => onOpenSkinsModal && onOpenSkinsModal(account)}
+        className="p-2.5 bg-black/40 border border-white/10 hover:border-cyan-500/40 rounded-xl cursor-pointer transition-all hover:bg-black/60 group/loot flex flex-col gap-1.5"
+        title="Clique para ver o inventário e espólio completo de skins"
+      >
+        <div className="flex items-center justify-between text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+          <span className="flex items-center gap-1 text-cyan-400 group-hover/loot:text-cyan-300">
+            <Sparkles size={11} /> Inventário & Espólio
+          </span>
+          <span className="text-gray-500 text-[9px] group-hover/loot:text-cyan-400 font-normal">
+            Ver galeria →
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5 text-xs font-mono font-bold">
+          <div className="bg-[#121820] border border-blue-500/20 px-2 py-1 rounded-lg flex items-center justify-between">
+            <span className="text-[10px] text-blue-400 font-sans font-semibold">AZUL</span>
+            <span className="text-blue-300">💎 {(account.blueEssence ?? 0).toLocaleString('pt-BR')}</span>
+          </div>
+          <div className="bg-[#121820] border border-orange-500/20 px-2 py-1 rounded-lg flex items-center justify-between">
+            <span className="text-[10px] text-orange-400 font-sans font-semibold">LARANJA</span>
+            <span className="text-orange-300">🟠 {(account.orangeEssence ?? 0).toLocaleString('pt-BR')}</span>
+          </div>
+        </div>
+
+        {(account.ownedSkinsCount || account.skinShardsCount || account.chestsCount) ? (
+          <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-sans pt-0.5 border-t border-white/5 flex-wrap">
+            {account.ownedSkinsCount ? (
+              <span className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded font-semibold">
+                ✨ {account.ownedSkinsCount} skins
+              </span>
+            ) : null}
+            {account.skinShardsCount ? (
+              <span className="bg-pink-500/10 text-pink-300 border border-pink-500/20 px-1.5 py-0.5 rounded font-semibold">
+                🎨 {account.skinShardsCount} frag.
+              </span>
+            ) : null}
+            {account.chestsCount ? (
+              <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-semibold">
+                📦 {account.chestsCount} baús
+              </span>
+            ) : null}
+            {account.keysCount ? (
+              <span className="bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-1.5 py-0.5 rounded font-semibold">
+                🔑 {account.keysCount} chaves
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {(account.login || account.password) && (
         <div className="bg-black/30 border border-white/5 rounded-xl p-3 flex flex-col gap-2 text-sm">

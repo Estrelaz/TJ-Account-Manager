@@ -10,6 +10,8 @@ import { ImportModal } from './components/ImportModal';
 import { ExportModal } from './components/ExportModal';
 import { PermanentTagsModal } from './components/PermanentTagsModal';
 import { BoardView } from './components/BoardView';
+import { LCUSyncModal } from './components/LCUSyncModal';
+import { SkinsModal } from './components/SkinsModal';
 import { parseAccountsFromFile } from './utils/importParser';
 import { supabase, isSupabaseConfigured, dbToAppAccount, dbToAppFolder, appToDBAccount, appToDBFolder, getUserProfile, signOut } from './lib/supabase';
 
@@ -113,6 +115,8 @@ export default function App() {
   const [pendingImports, setPendingImports] = useState<LoLAccount[]>([]);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showLcuSyncModal, setShowLcuSyncModal] = useState(false);
+  const [selectedAccountForSkinsModal, setSelectedAccountForSkinsModal] = useState<LoLAccount | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<any>(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
@@ -514,6 +518,42 @@ export default function App() {
     importedList.forEach(acc => syncAccountToCloud(acc));
   };
 
+  const handleLcuSyncedAccounts = (syncedList: LoLAccount[]) => {
+    if (!syncedList || syncedList.length === 0) return;
+
+    setAccounts(prev => {
+      const updatedList = [...prev];
+
+      syncedList.forEach(syncedAcc => {
+        const existingIdx = updatedList.findIndex(a => 
+          (a.gameName.toLowerCase() === syncedAcc.gameName.toLowerCase() && a.tagLine.toLowerCase() === syncedAcc.tagLine.toLowerCase()) ||
+          (a.login && syncedAcc.login && a.login.toLowerCase() === syncedAcc.login.toLowerCase())
+        );
+
+        if (existingIdx !== -1) {
+          const existing = updatedList[existingIdx];
+          const merged: LoLAccount = {
+            ...existing,
+            ...syncedAcc,
+            id: existing.id,
+            folderId: existing.folderId || syncedAcc.folderId,
+            tags: existing.tags.length > 0 ? existing.tags : syncedAcc.tags,
+            login: existing.login || syncedAcc.login,
+            password: existing.password || syncedAcc.password,
+            notes: existing.notes || syncedAcc.notes
+          };
+          updatedList[existingIdx] = merged;
+          syncAccountToCloud(merged);
+        } else {
+          updatedList.unshift(syncedAcc);
+          syncAccountToCloud(syncedAcc);
+        }
+      });
+
+      return updatedList;
+    });
+  };
+
   const filteredAccounts = accounts.filter(acc => {
     if (activeFolderId && acc.folderId !== activeFolderId) return false;
     if (!search.trim()) return true;
@@ -579,6 +619,15 @@ export default function App() {
             onChange={handleImport} 
             className="hidden" 
           />
+          <button 
+            onClick={() => setShowLcuSyncModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 rounded-lg text-sm font-semibold transition-all shadow-md shadow-cyan-500/10 hover:scale-105 active:scale-95"
+            title="Sincronizar Essência Azul, Skins e Espólio direto do cliente LoL rodando"
+          >
+            <Sparkles size={16} className="text-cyan-400 animate-pulse" />
+            <span>Sincronizar LCU</span>
+          </button>
+
           <button 
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 px-3 py-1.5 bg-[#161C24] border border-white/10 hover:border-cyan-500/50 hover:text-cyan-400 rounded-lg text-sm text-gray-400 transition-colors"
@@ -759,6 +808,7 @@ export default function App() {
               onReorderAccounts={handleReorderAccounts}
               onReorderFolders={handleReorderFolders}
               onOpenPermanentTagsModal={() => setShowPermanentTagsModal(true)}
+              onOpenSkinsModal={(acc) => setSelectedAccountForSkinsModal(acc)}
               onAddFolder={handleAddFolderDirect}
               onEditFolder={handleEditFolderDirect}
               onDeleteFolder={(folder) => setFolderToDelete(folder)}
@@ -1003,6 +1053,7 @@ export default function App() {
                     onRefresh={handleRefreshAccount}
                     onReorderAccounts={handleReorderAccounts}
                     onOpenPermanentTagsModal={() => setShowPermanentTagsModal(true)}
+                    onOpenSkinsModal={(acc) => setSelectedAccountForSkinsModal(acc)}
                     onEdit={(id, updates) => {
                       setAccounts(prev => prev.map(a => {
                         if (a.id === id) {
@@ -1354,6 +1405,20 @@ export default function App() {
         onClose={() => setShowPermanentTagsModal(false)}
         onAddPermanentTag={handleAddPermanentTag}
         onDeletePermanentTag={handleDeletePermanentTag}
+      />
+
+      {/* Modal de Sincronização Automática via Cliente LoL (LCU) */}
+      <LCUSyncModal
+        isOpen={showLcuSyncModal}
+        onClose={() => setShowLcuSyncModal(false)}
+        onAccountsSynced={handleLcuSyncedAccounts}
+      />
+
+      {/* Modal de Detalhes de Skins, Espólio e Inventário */}
+      <SkinsModal
+        isOpen={!!selectedAccountForSkinsModal}
+        account={selectedAccountForSkinsModal}
+        onClose={() => setSelectedAccountForSkinsModal(null)}
       />
 
       {/* Footer Area */}

@@ -157,6 +157,84 @@ async function startServer() {
     }
   });
 
+  // Helper function to normalize LCU sync payload
+  function normalizeLcuAccountData(item: any) {
+    if (!item || typeof item !== 'object') return null;
+
+    let gameName = 'Invocador';
+    let tagLine = 'BR1';
+
+    const accountStr = item.conta || item.account || item.gameName || '';
+    if (accountStr.includes('#')) {
+      const parts = accountStr.split('#');
+      gameName = parts[0].trim();
+      tagLine = parts.slice(1).join('#').trim() || 'BR1';
+    } else if (item.gameName) {
+      gameName = item.gameName;
+      tagLine = item.tagLine || 'BR1';
+    } else {
+      gameName = accountStr || 'Invocador';
+    }
+
+    const ownedSkins = item.skins_habilitadas_detalhadas || item.ownedSkins || [];
+    const lootSkins = item.skins_espolio_detalhadas || item.lootSkins || [];
+    const ownedSkinsIds = item.skins_permanentes_conta_ids || [];
+
+    return {
+      gameName,
+      tagLine,
+      blueEssence: item.essencia_azul ?? item.blueEssence ?? 0,
+      orangeEssence: item.essencia_laranja ?? item.orangeEssence ?? 0,
+      skinShardsCount: item.fragmentos_skin_count ?? item.skinShardsCount ?? 0,
+      championShardsCount: item.fragmentos_campeao_count ?? item.championShardsCount ?? 0,
+      chestsCount: item.baus_hextech_count ?? item.chestsCount ?? 0,
+      keysCount: item.chaves_completas_count ?? item.keysCount ?? 0,
+      keyFragmentsCount: item.fragmentos_chave_count ?? item.keyFragmentsCount ?? 0,
+      ownedSkinsCount: ownedSkins.length || ownedSkinsIds.length || item.Total_Skins_Habilitadas || 0,
+      ownedSkins: Array.isArray(ownedSkins) ? ownedSkins : [],
+      lootSkins: Array.isArray(lootSkins) ? lootSkins : [],
+      lootSkinNames: Array.isArray(item.nomes_fragmentos_skin) ? item.nomes_fragmentos_skin : (item.lootSkinNames || []),
+      lastSyncedAt: Date.now()
+    };
+  }
+
+  // API Endpoint for LCU Client Sync POST requests
+  app.post('/api/sync', (req, res) => {
+    try {
+      const payload = req.body;
+      if (!payload) {
+        return res.status(400).json({ error: 'Nenhum dado enviado na requisição.' });
+      }
+
+      let items: any[] = [];
+      if (Array.isArray(payload)) {
+        items = payload;
+      } else if (payload.dados_conta) {
+        items = [payload.dados_conta];
+      } else {
+        items = [payload];
+      }
+
+      const normalized = items.map(normalizeLcuAccountData).filter(Boolean);
+
+      if (normalized.length === 0) {
+        return res.status(400).json({ error: 'Não foi possível ler os dados da conta no payload.' });
+      }
+
+      console.log(`[LCU Sync] Sincronizadas ${normalized.length} contas com sucesso.`);
+
+      res.json({
+        success: true,
+        message: `${normalized.length} conta(s) sincronizada(s) com sucesso!`,
+        syncedAccounts: normalized,
+        receivedAt: new Date().toISOString()
+      });
+    } catch (err: any) {
+      console.error('Error on /api/sync:', err);
+      res.status(500).json({ error: 'Erro ao processar sincronização de conta: ' + (err.message || err) });
+    }
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

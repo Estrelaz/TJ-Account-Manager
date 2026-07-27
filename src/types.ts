@@ -12,6 +12,25 @@ export interface Tag {
   icon?: string;
 }
 
+export interface OwnedSkin {
+  skin_id: number;
+  champion_id: number;
+  skin_name: string;
+  champion_name: string;
+  splash_url?: string;
+  tile_url?: string;
+}
+
+export interface LootSkin {
+  skin_id: number;
+  champion_id: number;
+  skin_name: string;
+  is_permanent?: boolean;
+  count?: number;
+  splash_url?: string;
+  tile_url?: string;
+}
+
 export interface LoLAccount {
   id: string;
   gameName: string;
@@ -31,4 +50,19 @@ export interface LoLAccount {
   folderId?: string | null;
   tags: Tag[];
   createdAt: number;
+
+  // LCU Client Sync & Inventory
+  blueEssence?: number;
+  orangeEssence?: number;
+  skinShardsCount?: number;
+  championShardsCount?: number;
+  chestsCount?: number;
+  keysCount?: number;
+  keyFragmentsCount?: number;
+  ownedSkinsCount?: number;
+  ownedSkins?: OwnedSkin[];
+  lootSkins?: LootSkin[];
+  lootSkinNames?: string[];
+  lastSyncedAt?: number;
 }
+
