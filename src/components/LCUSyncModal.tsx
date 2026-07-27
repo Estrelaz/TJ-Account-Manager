@@ -28,8 +28,9 @@ export const LCUSyncModal: React.FC<LCUSyncModalProps> = ({ isOpen, onClose, onS
     : (typeof window !== 'undefined' ? `${window.location.origin}/api/sync` : 'https://tj-account-manager.vercel.app/api/sync');
 
   const supabaseSqlCode = `-- Copie e cole este código no SQL Editor do seu painel do Supabase:
+-- Adiciona as colunas de Essência, Skins e Espólio na tabela 'accounts':
 
-ALTER TABLE lol_accounts
+ALTER TABLE accounts
 ADD COLUMN IF NOT EXISTS blue_essence BIGINT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS orange_essence BIGINT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS skin_shards_count INT DEFAULT 0,
@@ -44,10 +45,26 @@ ADD COLUMN IF NOT EXISTS loot_skin_names JSONB DEFAULT '[]'::jsonb,
 ADD COLUMN IF NOT EXISTS last_synced_at BIGINT;
 `;
 
-  const pythonScriptCode = `import os
-import requests
-import urllib3
-import json
+  const pythonScriptCode = `import sys
+import os
+import traceback
+
+print("==================================================")
+print("   SINCRONIZADOR DE CONTA LOL - TJ ACCOUNT MANAGER")
+print("==================================================\n")
+
+# Verifica se os pacotes necessários estão instalados
+try:
+    import requests
+    import urllib3
+    import json
+except ImportError as e:
+    print(f"[ERRO DE BIBLIOTECA] Faltam bibliotecas necessárias no seu Python.")
+    print(f"Detalhe: {e}")
+    print("\nPara corrigir, abra o CMD/Terminal e execute:")
+    print("pip install requests urllib3 psutil\n")
+    input("Pressione ENTER para sair...")
+    sys.exit(1)
 
 # Desativa avisos de certificado SSL local do cliente do LoL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -83,9 +100,11 @@ def get_lol_auth():
 
     # Método alternativo via lockfile caso psutil não encontre
     paths = [
-        r"C:\\Riot Games\\League of Legends\\lockfile",
-        r"D:\\Riot Games\\League of Legends\\lockfile",
-        r"E:\\Riot Games\\League of Legends\\lockfile",
+        r"C:\Riot Games\League of Legends\lockfile",
+        r"D:\Riot Games\League of Legends\lockfile",
+        r"E:\Riot Games\League of Legends\lockfile",
+        r"C:\Games\League of Legends\lockfile",
+        r"D:\Games\League of Legends\lockfile",
     ]
     for p in paths:
         if os.path.exists(p):
@@ -99,10 +118,11 @@ def get_lol_auth():
     return None, None
 
 def sincronizar_conta_completa():
+    print("[1/5] Procurando League of Legends aberto no PC...")
     port, password = get_lol_auth()
     if not port or not password:
-        print("[ERRO] Cliente do League of Legends não foi encontrado aberto no PC.")
-        print("Abra o League de Legends e tente novamente.")
+        print("\n[ATENÇÃO] Cliente do League of Legends NÃO foi encontrado aberto.")
+        print("-> Por favor, abra o jogo League of Legends e faça login na sua conta primeiro.")
         return
 
     base_url = f"https://127.0.0.1:{port}"
@@ -110,12 +130,13 @@ def sincronizar_conta_completa():
     session.auth = ('riot', password)
     session.verify = False
 
-    print(f"[OK] Conectado ao Cliente LoL na porta {port}")
+    print(f"[OK] Conectado ao Cliente LoL na porta {port}!")
 
     # 1. Invocador
+    print("[2/5] Lendo dados do invocador...")
     res = session.get(f"{base_url}/lol-summoner/v1/current-summoner")
     if res.status_code != 200:
-        print("[ERRO] Não foi possível obter dados do invocador.")
+        print("[ERRO] Não foi possível obter dados do invocador logado.")
         return
     summoner = res.json()
     display_name = summoner.get('gameName', summoner.get('displayName', 'Invocador'))
@@ -123,12 +144,14 @@ def sincronizar_conta_completa():
     conta_full = f"{display_name}#{tag_line}"
 
     # 2. Carteiras (Essência Azul / Laranja)
+    print("[3/5] Consultando Essência Azul e Laranja...")
     wallet_res = session.get(f"{base_url}/lol-store/v1/wallet")
     wallet = wallet_res.json() if wallet_res.status_code == 200 else {}
     ip = wallet.get('ip', 0)  # Essência Azul
     rp = wallet.get('rp', 0)
 
     # 3. Espólio & Inventário
+    print("[4/5] Mapeando espólio, fragmentos de skins e baús...")
     loot_res = session.get(f"{base_url}/lol-loot/v1/player-loot")
     loot_items = loot_res.json() if loot_res.status_code == 200 else []
 
@@ -169,6 +192,7 @@ def sincronizar_conta_completa():
             frag_champ_count += count
 
     # 4. Skins Habilitadas
+    print("[5/5] Coletando skins habilitadas na conta...")
     skins_res = session.get(f"{base_url}/lol-champions/v1/inventories/{summoner['summonerId']}/skins-minimal")
     owned_skins_detalhes = []
     if skins_res.status_code == 200:
@@ -197,24 +221,40 @@ def sincronizar_conta_completa():
         'nomes_fragmentos_skin': nomes_frag_skin
     }
 
-    print("\\n--- Resumo Coletado ---")
+    print("\n==================================================")
+    print("                RESUMO DA CONTA")
+    print("==================================================")
     print(f"Conta: {conta_full}")
     print(f"Essência Azul: {ip} | Essência Laranja: {oe}")
-    print(f"Skins Habilitadas: {len(owned_skins_detalhes)} | Frag. Skin: {frag_skin_count}")
+    print(f"Skins Habilitadas: {len(owned_skins_detalhes)} | Frag. de Skin: {frag_skin_count}")
+    print(f"Baús Hextech: {baus_count} | Chaves: {chaves_count} ({frag_chave_count} frag.)")
 
     # 5. Enviar para a aplicação Web
-    print(f"Enviando dados para {SYNC_ENDPOINT}...")
+    print(f"\nEnviando dados sincronizados para o site ({SYNC_ENDPOINT})...")
     try:
-        response = requests.post(SYNC_ENDPOINT, json={'dados_conta': dados_conta}, timeout=10)
+        response = requests.post(SYNC_ENDPOINT, json={'dados_conta': dados_conta}, timeout=12)
         if response.status_code == 200:
-            print("[SUCESSO!] Os dados da conta foram atualizados no site em tempo real!")
+            res_data = response.json()
+            print("\n[SUCESSO COMPLETO!] Servidor respondeu:")
+            print(f" -> {res_data.get('message', 'Sincronizado')}")
+            for log in res_data.get('dbLogs', []):
+                print(f" -> DB STATUS: {log}")
         else:
-            print(f"[AVISO] Servidor respondeu status {response.status_code}: {response.text}")
+            print(f"\n[AVISO] O site respondeu com código {response.status_code}: {response.text}")
     except Exception as e:
-        print(f"[ERRO ao enviar para o site] {e}")
+        print(f"\n[ERRO AO ENVIAR PARA O SITE] {e}")
 
 if __name__ == '__main__':
-    sincronizar_conta_completa()
+    try:
+        sincronizar_conta_completa()
+    except Exception as err:
+        print("\n==================================================")
+        print(" OCORREU UM ERRO INESPERADO DURANTE A EXECUÇÃO:")
+        print("==================================================")
+        traceback.print_exc()
+    finally:
+        print("\n--------------------------------------------------")
+        input("Pressione ENTER para fechar a janela do terminal...")
 `;
 
   const handleCopyCode = () => {

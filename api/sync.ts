@@ -73,48 +73,88 @@ export default async function handler(req: any, res: any) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
     let updatedInDb = false;
+    let dbLogs: string[] = [];
+
     if (supabaseUrl && supabaseKey) {
       try {
         const supabase = createClient(supabaseUrl, supabaseKey);
+
         for (const item of normalizedList) {
-          // Find existing account by game_name & tag_line
-          const { data: existing } = await supabase
-            .from('lol_accounts')
+          const updatePayload = {
+            blue_essence: item.blueEssence,
+            orange_essence: item.orangeEssence,
+            skin_shards_count: item.skinShardsCount,
+            champion_shards_count: item.championShardsCount,
+            chests_count: item.chestsCount,
+            keys_count: item.keysCount,
+            key_fragments_count: item.keyFragmentsCount,
+            owned_skins_count: item.ownedSkinsCount,
+            owned_skins: item.ownedSkins,
+            loot_skins: item.lootSkins,
+            loot_skin_names: item.lootSkinNames,
+            last_synced_at: item.lastSyncedAt
+          };
+
+          // Tentar primeiro na tabela 'accounts'
+          let tableName = 'accounts';
+          let { data: existing, error: findErr } = await supabase
+            .from('accounts')
             .select('*')
             .ilike('game_name', item.gameName)
             .ilike('tag_line', item.tagLine)
             .maybeSingle();
 
-          if (existing) {
-            await supabase
+          // Se não achou em accounts por game_name+tag_line, tenta por login
+          if (!existing) {
+            const { data: existingByLogin } = await supabase
+              .from('accounts')
+              .select('*')
+              .ilike('login', item.gameName)
+              .maybeSingle();
+            if (existingByLogin) existing = existingByLogin;
+          }
+
+          // Se não achou na tabela 'accounts', tenta em 'lol_accounts'
+          if (!existing) {
+            tableName = 'lol_accounts';
+            const { data: existingLol } = await supabase
               .from('lol_accounts')
-              .update({
-                blue_essence: item.blueEssence,
-                orange_essence: item.orangeEssence,
-                skin_shards_count: item.skinShardsCount,
-                champion_shards_count: item.championShardsCount,
-                chests_count: item.chestsCount,
-                keys_count: item.keysCount,
-                key_fragments_count: item.keyFragmentsCount,
-                owned_skins_count: item.ownedSkinsCount,
-                owned_skins: item.ownedSkins,
-                loot_skins: item.lootSkins,
-                loot_skin_names: item.lootSkinNames,
-                last_synced_at: item.lastSyncedAt
-              })
+              .select('*')
+              .ilike('game_name', item.gameName)
+              .ilike('tag_line', item.tagLine)
+              .maybeSingle();
+            if (existingLol) existing = existingLol;
+          }
+
+          if (existing) {
+            const { error: updateErr } = await supabase
+              .from(tableName)
+              .update(updatePayload)
               .eq('id', existing.id);
-            updatedInDb = true;
+
+            if (updateErr) {
+              dbLogs.push(`Erro ao atualizar ${item.gameName}#${item.tagLine} na tabela ${tableName}: ${updateErr.message}`);
+            } else {
+              updatedInDb = true;
+              dbLogs.push(`Conta ${item.gameName}#${item.tagLine} atualizada com sucesso na tabela '${tableName}'!`);
+            }
+          } else {
+            dbLogs.push(`Nenhuma conta encontrada com o nome '${item.gameName}#${item.tagLine}' nas tabelas 'accounts' ou 'lol_accounts'.`);
           }
         }
-      } catch (dbErr) {
+      } catch (dbErr: any) {
         console.error('Supabase auto update error:', dbErr);
+        dbLogs.push(`Erro geral de conexão ao Supabase: ${dbErr.message || dbErr}`);
       }
+    } else {
+      dbLogs.push('Chaves do Supabase não configuradas no ambiente do Vercel (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
     }
 
     return res.status(200).json({
       success: true,
-      message: `${normalizedList.length} conta(s) sincronizada(s) com sucesso!`,
+      message: `${normalizedList.length} conta(s) processada(s)!`,
       updatedInDb,
+      dbLogs,
       syncedAccounts: normalizedList,
       receivedAt: new Date().toISOString()
     });
