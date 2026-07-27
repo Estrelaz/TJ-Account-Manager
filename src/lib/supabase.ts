@@ -77,6 +77,7 @@ export interface DBAccount {
   created_at: number;
   blue_essence?: number;
   orange_essence?: number;
+  rp?: number;
   skin_shards_count?: number;
   champion_shards_count?: number;
   chests_count?: number;
@@ -121,6 +122,7 @@ export function dbToAppAccount(db: DBAccount): LoLAccount {
     createdAt: db.created_at || Date.now(),
     blueEssence: db.blue_essence ?? 0,
     orangeEssence: db.orange_essence ?? 0,
+    rp: db.rp ?? 0,
     skinShardsCount: db.skin_shards_count ?? 0,
     championShardsCount: db.champion_shards_count ?? 0,
     chestsCount: db.chests_count ?? 0,
@@ -167,6 +169,7 @@ export function appToDBAccount(acc: LoLAccount, userId: string): DBAccount {
     created_at: acc.createdAt || Date.now(),
     blue_essence: acc.blueEssence ?? 0,
     orange_essence: acc.orangeEssence ?? 0,
+    rp: acc.rp ?? acc.riotPoints ?? 0,
     skin_shards_count: acc.skinShardsCount ?? 0,
     champion_shards_count: acc.championShardsCount ?? 0,
     chests_count: acc.chestsCount ?? 0,

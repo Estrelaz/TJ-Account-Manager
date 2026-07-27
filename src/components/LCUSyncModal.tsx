@@ -28,16 +28,14 @@ export const LCUSyncModal: React.FC<LCUSyncModalProps> = ({ isOpen, onClose, onS
     : (typeof window !== 'undefined' ? `${window.location.origin}/api/sync` : 'https://tj-account-manager.vercel.app/api/sync');
 
   const supabaseSqlCode = `-- Copie e cole este código no SQL Editor do seu painel do Supabase:
--- Adiciona as colunas de Essência, Skins e Espólio na tabela 'accounts':
+-- Adiciona as colunas de Essência, RP, Skins e Espólio na tabela 'accounts':
 
 ALTER TABLE accounts
 ADD COLUMN IF NOT EXISTS blue_essence BIGINT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS orange_essence BIGINT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS rp BIGINT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS skin_shards_count INT DEFAULT 0,
-ADD COLUMN IF NOT EXISTS champion_shards_count INT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS chests_count INT DEFAULT 0,
-ADD COLUMN IF NOT EXISTS keys_count INT DEFAULT 0,
-ADD COLUMN IF NOT EXISTS key_fragments_count INT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS owned_skins_count INT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS owned_skins JSONB DEFAULT '[]'::jsonb,
 ADD COLUMN IF NOT EXISTS loot_skins JSONB DEFAULT '[]'::jsonb,
@@ -157,10 +155,7 @@ def sincronizar_conta_completa():
 
     oe = 0
     frag_skin_count = 0
-    frag_champ_count = 0
     baus_count = 0
-    chaves_count = 0
-    frag_chave_count = 0
     nomes_frag_skin = []
     skins_espolio_detalhadas = []
 
@@ -171,12 +166,8 @@ def sincronizar_conta_completa():
 
         if item_id == 'CURRENCY_cosmetic':
             oe = count
-        elif 'CHEST' in item_id:
+        elif ('CHEST' in item_id or 'chest' in item_id.lower()) and ('KEY' not in item_id and 'key' not in item_id.lower()):
             baus_count += count
-        elif item_id == 'MATERIAL_key':
-            chaves_count += count
-        elif item_id == 'MATERIAL_key_fragment':
-            frag_chave_count += count
         elif 'SKIN' in type_str or 'SKIN' in item_id:
             frag_skin_count += count
             name = item.get('itemDesc', item.get('lootName', 'Skin'))
@@ -188,8 +179,6 @@ def sincronizar_conta_completa():
                 'is_permanent': 'RENTAL' not in type_str,
                 'count': count
             })
-        elif 'CHAMPION' in type_str or 'CHAMPION' in item_id:
-            frag_champ_count += count
 
     # 4. Skins Habilitadas
     print("[5/5] Coletando skins habilitadas na conta...")
@@ -199,23 +188,23 @@ def sincronizar_conta_completa():
         all_skins = skins_res.json()
         for s in all_skins:
             if s.get('ownership', {}).get('owned', False):
+                raw_tile = f"https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/{s.get('championName', '')}_0.jpg" if s.get('championName') else None
+                tile_url = f"https://wsrv.nl/?url={raw_tile}" if raw_tile else None
                 owned_skins_detalhes.append({
                     'skin_id': s.get('id'),
                     'champion_id': s.get('championId'),
                     'skin_name': s.get('name'),
                     'champion_name': s.get('championName', ''),
-                    'tile_url': f"https://ddragon.leagueoflegends.com/cdn/img/champion/tiles/{s.get('championName', '')}_0.jpg" if s.get('championName') else None
+                    'tile_url': tile_url
                 })
 
     dados_conta = {
         'conta': conta_full,
         'essencia_azul': ip,
+        'rp': rp,
         'essencia_laranja': oe,
         'fragmentos_skin_count': frag_skin_count,
-        'fragmentos_campeao_count': frag_champ_count,
         'baus_hextech_count': baus_count,
-        'chaves_completas_count': chaves_count,
-        'fragmentos_chave_count': frag_chave_count,
         'skins_habilitadas_detalhadas': owned_skins_detalhes,
         'skins_espolio_detalhadas': skins_espolio_detalhadas,
         'nomes_fragmentos_skin': nomes_frag_skin
@@ -225,9 +214,8 @@ def sincronizar_conta_completa():
     print("                RESUMO DA CONTA")
     print("==================================================")
     print(f"Conta: {conta_full}")
-    print(f"Essência Azul: {ip} | Essência Laranja: {oe}")
-    print(f"Skins Habilitadas: {len(owned_skins_detalhes)} | Frag. de Skin: {frag_skin_count}")
-    print(f"Baús Hextech: {baus_count} | Chaves: {chaves_count} ({frag_chave_count} frag.)")
+    print(f"Essência Azul: {ip} | RP: {rp} | Essência Laranja: {oe}")
+    print(f"Skins Habilitadas: {len(owned_skins_detalhes)} | Frag. de Skin: {frag_skin_count} | Baús Hextech: {baus_count}")
 
     # 5. Enviar para a aplicação Web
     print(f"\nEnviando dados sincronizados para o site ({SYNC_ENDPOINT})...")

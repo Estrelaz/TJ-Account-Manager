@@ -3,6 +3,7 @@ import { Trash2, UserCircle2, Eye, EyeOff, Copy, Check, FolderInput, Edit2, Shie
 import { LoLAccount, Tag, Folder } from '../types';
 import { TagEditor } from './TagEditor';
 import { RankedAvatar } from './RankedAvatar';
+import { getCachedImageUrl } from '../utils/imageUtils';
 
 interface AccountCardProps {
   account: LoLAccount;
@@ -696,16 +697,16 @@ export function AccountCard({
          <div className="text-[7px] font-black text-gray-500 uppercase tracking-tighter w-8 leading-none mr-1">Links Rápidos</div>
          <div className="flex flex-1 justify-around items-center">
             <a href={links.opgg} target="_blank" rel="noreferrer" title="OP.GG" className="hover:scale-110 transition-transform active:scale-95 grayscale hover:grayscale-0">
-              <img src="https://op.gg/assets/images/about/opgg_app.png" className="w-7 h-7 rounded-lg shadow-sm" alt="OP.GG" />
+              <img src={getCachedImageUrl("https://op.gg/assets/images/about/opgg_app.png")} className="w-7 h-7 rounded-lg shadow-sm" alt="OP.GG" />
             </a>
             <a href={links.porofessor} target="_blank" rel="noreferrer" title="Porofessor" className="hover:scale-110 transition-transform active:scale-95 grayscale hover:grayscale-0">
-              <img src="https://cdn2.porofessor.gg/img/porofessor-200.png" className="w-7 h-7 rounded-lg shadow-sm" alt="Porofessor" />
+              <img src={getCachedImageUrl("https://cdn2.porofessor.gg/img/porofessor-200.png")} className="w-7 h-7 rounded-lg shadow-sm" alt="Porofessor" />
             </a>
             <a href={links.ugg} target="_blank" rel="noreferrer" title="U.GG" className="hover:scale-110 transition-transform active:scale-95 grayscale hover:grayscale-0">
-              <img src="https://pbs.twimg.com/profile_images/1841544879639560192/6isnQg8G.jpg" className="w-7 h-7 rounded-lg shadow-sm" alt="U.GG" />
+              <img src={getCachedImageUrl("https://pbs.twimg.com/profile_images/1841544879639560192/6isnQg8G.jpg")} className="w-7 h-7 rounded-lg shadow-sm" alt="U.GG" />
             </a>
             <a href={links.log} target="_blank" rel="noreferrer" title="League of Graphs" className="hover:scale-110 transition-transform active:scale-95 grayscale hover:grayscale-0">
-              <img src="https://i.postimg.cc/YqpK2skW/league-of-graphs.webp" className="w-7 h-7 rounded-lg shadow-sm" alt="League of Graphs" />
+              <img src={getCachedImageUrl("https://i.postimg.cc/YqpK2skW/league-of-graphs.webp")} className="w-7 h-7 rounded-lg shadow-sm" alt="League of Graphs" />
             </a>
          </div>
       </div>
@@ -764,36 +765,32 @@ export function AccountCard({
             <span className="text-[10px] text-blue-400 font-sans font-semibold">AZUL</span>
             <span className="text-blue-300">💎 {(account.blueEssence ?? 0).toLocaleString('pt-BR')}</span>
           </div>
-          <div className="bg-[#121820] border border-orange-500/20 px-2 py-1 rounded-lg flex items-center justify-between">
-            <span className="text-[10px] text-orange-400 font-sans font-semibold">LARANJA</span>
-            <span className="text-orange-300">🟠 {(account.orangeEssence ?? 0).toLocaleString('pt-BR')}</span>
+          <div className="bg-[#121820] border border-red-500/20 px-2 py-1 rounded-lg flex items-center justify-between">
+            <span className="text-[10px] text-red-400 font-sans font-semibold">RP</span>
+            <span className="text-red-300">🎯 {(account.rp ?? account.riotPoints ?? 0).toLocaleString('pt-BR')}</span>
           </div>
         </div>
 
-        {(account.ownedSkinsCount || account.skinShardsCount || account.chestsCount) ? (
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-sans pt-0.5 border-t border-white/5 flex-wrap">
-            {account.ownedSkinsCount ? (
-              <span className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded font-semibold">
-                ✨ {account.ownedSkinsCount} skins
-              </span>
-            ) : null}
-            {account.skinShardsCount ? (
-              <span className="bg-pink-500/10 text-pink-300 border border-pink-500/20 px-1.5 py-0.5 rounded font-semibold">
-                🎨 {account.skinShardsCount} frag.
-              </span>
-            ) : null}
-            {account.chestsCount ? (
-              <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-semibold">
-                📦 {account.chestsCount} baús
-              </span>
-            ) : null}
-            {account.keysCount ? (
-              <span className="bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-1.5 py-0.5 rounded font-semibold">
-                🔑 {account.keysCount} chaves
-              </span>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-sans pt-0.5 border-t border-white/5 flex-wrap">
+          <span className="bg-orange-500/10 text-orange-300 border border-orange-500/20 px-1.5 py-0.5 rounded font-semibold">
+            🟠 {(account.orangeEssence ?? 0).toLocaleString('pt-BR')} Laranja
+          </span>
+          {account.ownedSkinsCount ? (
+            <span className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded font-semibold">
+              ✨ {account.ownedSkinsCount} skins
+            </span>
+          ) : null}
+          {account.skinShardsCount ? (
+            <span className="bg-pink-500/10 text-pink-300 border border-pink-500/20 px-1.5 py-0.5 rounded font-semibold">
+              🎨 {account.skinShardsCount} frag.
+            </span>
+          ) : null}
+          {account.chestsCount ? (
+            <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 px-1.5 py-0.5 rounded font-semibold">
+              📦 {account.chestsCount} baús hextech
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {(account.login || account.password) && (

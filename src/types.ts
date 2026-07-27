@@ -54,6 +54,8 @@ export interface LoLAccount {
   // LCU Client Sync & Inventory
   blueEssence?: number;
   orangeEssence?: number;
+  rp?: number;
+  riotPoints?: number;
   skinShardsCount?: number;
   championShardsCount?: number;
   chestsCount?: number;

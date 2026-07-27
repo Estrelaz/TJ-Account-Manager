@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Search, Sparkles, Package, ShieldCheck, Diamond, Flame, Trophy } from 'lucide-react';
 import { LoLAccount, OwnedSkin, LootSkin } from '../types';
+import { getCachedImageUrl } from '../utils/imageUtils';
 
 interface SkinsModalProps {
   account: LoLAccount | null;
@@ -62,11 +63,18 @@ export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose
         </div>
 
         {/* Balance & Inventory Stats Header */}
-        <div className="p-4 bg-black/40 border-b border-white/10 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5 text-center">
+        <div className="p-4 bg-black/40 border-b border-white/10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 text-center">
           <div className="bg-[#161C24] border border-blue-500/20 p-2 rounded-xl flex flex-col items-center">
             <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">Essência Azul</span>
             <div className="text-sm font-black text-white flex items-center gap-1 mt-0.5 font-mono">
               💎 {(account.blueEssence ?? 0).toLocaleString('pt-BR')}
+            </div>
+          </div>
+
+          <div className="bg-[#161C24] border border-red-500/20 p-2 rounded-xl flex flex-col items-center">
+            <span className="text-[10px] uppercase font-bold text-red-400 tracking-wider">Riot Points</span>
+            <div className="text-sm font-black text-white flex items-center gap-1 mt-0.5 font-mono">
+              🎯 {(account.rp ?? account.riotPoints ?? 0).toLocaleString('pt-BR')}
             </div>
           </div>
 
@@ -91,24 +99,10 @@ export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose
             </div>
           </div>
 
-          <div className="bg-[#161C24] border border-cyan-500/20 p-2 rounded-xl flex flex-col items-center">
-            <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Frag. Champ</span>
-            <div className="text-sm font-black text-cyan-300 mt-0.5 font-mono">
-              🧩 {account.championShardsCount ?? 0}
-            </div>
-          </div>
-
           <div className="bg-[#161C24] border border-amber-500/20 p-2 rounded-xl flex flex-col items-center">
             <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Baús Hextech</span>
             <div className="text-sm font-black text-amber-300 mt-0.5 font-mono">
               📦 {account.chestsCount ?? 0}
-            </div>
-          </div>
-
-          <div className="bg-[#161C24] border border-emerald-500/20 p-2 rounded-xl flex flex-col items-center col-span-2 sm:col-span-1">
-            <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Chaves</span>
-            <div className="text-sm font-black text-emerald-300 mt-0.5 font-mono">
-              🔑 {account.keysCount ?? 0} <span className="text-[10px] text-gray-400">({account.keyFragmentsCount ?? 0}f)</span>
             </div>
           </div>
         </div>
@@ -175,7 +169,7 @@ export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose
                     <div className="h-32 bg-gray-900 relative overflow-hidden">
                       {skin.tile_url || skin.splash_url ? (
                         <img
-                          src={skin.tile_url || skin.splash_url}
+                          src={getCachedImageUrl(skin.tile_url || skin.splash_url)}
                           alt={skin.skin_name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           loading="lazy"
@@ -229,7 +223,7 @@ export const SkinsModal: React.FC<SkinsModalProps> = ({ account, isOpen, onClose
                     <div className="h-32 bg-gray-900 relative overflow-hidden">
                       {skin.tile_url || skin.splash_url ? (
                         <img
-                          src={skin.tile_url || skin.splash_url}
+                          src={getCachedImageUrl(skin.tile_url || skin.splash_url)}
                           alt={skin.skin_name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           loading="lazy"
